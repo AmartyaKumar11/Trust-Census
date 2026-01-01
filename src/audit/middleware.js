@@ -1,55 +1,29 @@
-/**
- * Audit Middleware
- * Logs all actions for complete auditability
- * Immutable, append-only logging
- */
+import { logAuditEvent } from './logger.js';
 
 /**
- * Create audit log entry
- * All system actions are logged here
+ * Audit Middleware
+ * 
+ * RESPONSIBILITY: Fastify plugin for automatic request/response audit logging
+ * 
+ * MUST:
+ * - Automatically log all requests and responses
+ * - Capture request metadata (IP, user agent, method, path)
+ * - Log response status codes
+ * - Be independent of business logic (separation of powers)
+ * 
+ * MUST NEVER:
+ * - Log sensitive data in metadata
+ * - Modify request/response
+ * - Break request flow on audit failure
+ * - Expose raw census data
  */
-export async function logAuditEvent(fastify, {
-  userId,
-  actionType,
-  resourceType,
-  resourceId = null,
-  ipAddress,
-  userAgent,
-  requestMethod,
-  requestPath,
-  statusCode,
-  metadata = {}
-}) {
-  const db = fastify.db;
-  
-  try {
-    const result = await db.query(
-      `SELECT log_audit_event($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) as id`,
-      [
-        userId,
-        actionType,
-        resourceType,
-        resourceId,
-        ipAddress,
-        userAgent,
-        requestMethod,
-        requestPath,
-        statusCode,
-        JSON.stringify(metadata)
-      ]
-    );
-    
-    return result.rows[0].id;
-  } catch (error) {
-    // Audit logging failures are critical but should not break the request
-    console.error('Audit logging failed:', error);
-    // In production, this should alert administrators
-    return null;
-  }
-}
 
 /**
  * Fastify plugin to add audit logging to requests
+ * 
+ * This middleware automatically logs all requests and responses
+ * for complete auditability. It operates independently of business
+ * operations to ensure separation of powers.
  */
 export async function auditPlugin(fastify) {
   fastify.addHook('onRequest', async (request, reply) => {

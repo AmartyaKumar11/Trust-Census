@@ -5,7 +5,20 @@ import { initDB, getDB } from './connection.js';
 
 /**
  * Database Migration Script
- * Runs the initial schema setup
+ * 
+ * RESPONSIBILITY: Execute database schema initialization
+ * 
+ * MUST:
+ * - Read and execute schema from init.sql
+ * - Initialize database connection
+ * - Handle migration errors gracefully
+ * - Close connections after migration
+ * 
+ * MUST NEVER:
+ * - Modify schema to violate trust-first principles
+ * - Bypass security constraints
+ * - Run in production without proper authorization
+ * - Expose database credentials
  */
 
 const __filename = fileURLToPath(import.meta.url);

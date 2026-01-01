@@ -1,13 +1,26 @@
 import { getDB } from '../db/connection.js';
 import { validate, aggregateComputationSchema } from '../middleware/validation.js';
-import { logAuditEvent } from '../middleware/audit.js';
+import { logAuditEvent } from '../audit/logger.js';
 import { generateHash } from '../utils/security.js';
 
 /**
  * Aggregate Computation Routes
- * Computes aggregates from stored data
- * NO reverse data flow: aggregates cannot be used to infer raw data
- * NO raw data access: only pre-computed aggregates are returned
+ * 
+ * RESPONSIBILITY: Aggregate statistics computation (ANALYST role)
+ * 
+ * MUST:
+ * - Compute aggregates from stored data
+ * - Return only aggregate statistics (NO raw data)
+ * - Store computation hashes for audit
+ * - Require ANALYST role
+ * - Prevent reverse engineering of raw data
+ * 
+ * MUST NEVER:
+ * - Return raw census data
+ * - Allow reverse data flow from aggregates
+ * - Expose individual submission details
+ * - Allow other roles to compute aggregates
+ * - Export or download raw data
  */
 
 export async function aggregateRoutes(fastify) {

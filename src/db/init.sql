@@ -1,4 +1,21 @@
 -- Trust Census Database Schema
+-- 
+-- RESPONSIBILITY: Database schema definition with trust-first constraints
+-- 
+-- MUST:
+-- - Enforce one-way data flow (submissions cannot be retrieved)
+-- - Prevent super-admin role (CHECK constraint)
+-- - Provide immutable audit logging (append-only)
+-- - Store aggregates separately from raw data
+-- - Enforce data integrity constraints
+-- 
+-- MUST NEVER:
+-- - Allow super-admin role creation
+-- - Provide raw data retrieval after submission
+-- - Allow modification of audit logs
+-- - Store personal identifiers (Aadhaar, phone, biometrics)
+-- - Allow reverse data flow from aggregates
+--
 -- Enforces one-way data flow and strict auditability
 
 -- Role enumeration (NO SUPER-ADMIN)

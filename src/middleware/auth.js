@@ -3,8 +3,22 @@ import { getDB } from '../db/connection.js';
 
 /**
  * Authentication Middleware
- * JWT-based authentication with role-based access control
- * NO SUPER-ADMIN role allowed
+ * 
+ * RESPONSIBILITY: JWT authentication and role-based access control
+ * 
+ * MUST:
+ * - Verify JWT tokens on protected routes
+ * - Enforce role-based access control (RBAC)
+ * - Explicitly reject super-admin role (database + code)
+ * - Verify user is active before allowing access
+ * - Update last login timestamp
+ * 
+ * MUST NEVER:
+ * - Allow super-admin role (explicitly rejected)
+ * - Bypass authentication checks
+ * - Grant permissions beyond user's role
+ * - Expose user passwords or hashes
+ * - Allow role escalation
  */
 
 /**

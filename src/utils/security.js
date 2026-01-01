@@ -2,7 +2,21 @@ import crypto from 'crypto';
 
 /**
  * Security Utilities
- * Cryptographic functions for data integrity and privacy
+ * 
+ * RESPONSIBILITY: Cryptographic functions and personal data validation
+ * 
+ * MUST:
+ * - Generate SHA-256 hashes for data integrity
+ * - Verify data integrity using hashes
+ * - Validate that no personal identifiers are present
+ * - Sanitize inputs to prevent injection attacks
+ * 
+ * MUST NEVER:
+ * - Store or log sensitive data
+ * - Bypass security checks
+ * - Modify data in place (return sanitized copies)
+ * - Accept personal identifiers (Aadhaar, phone, biometrics, etc.)
+ * - Expose cryptographic keys or secrets
  */
 
 /**

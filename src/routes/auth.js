@@ -1,12 +1,26 @@
 import bcrypt from 'bcryptjs';
 import { getDB } from '../db/connection.js';
 import { validate, userCreationSchema } from '../middleware/validation.js';
-import { logAuditEvent } from '../middleware/audit.js';
+import { logAuditEvent } from '../audit/logger.js';
 
 /**
  * Authentication Routes
- * User registration and login
- * NO super-admin role creation allowed
+ * 
+ * RESPONSIBILITY: User registration and authentication endpoints
+ * 
+ * MUST:
+ * - Allow user registration with valid roles only
+ * - Authenticate users and issue JWT tokens
+ * - Hash passwords securely (bcrypt)
+ * - Explicitly reject super-admin role creation
+ * - Log all authentication events
+ * 
+ * MUST NEVER:
+ * - Create super-admin users
+ * - Return passwords or password hashes
+ * - Bypass authentication checks
+ * - Allow role escalation
+ * - Expose user credentials
  */
 
 export async function authRoutes(fastify) {

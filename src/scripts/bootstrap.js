@@ -4,8 +4,22 @@ import { initDB, getDB } from '../db/connection.js';
 
 /**
  * Bootstrap Script
- * Creates the first user for the system
- * This should be run once after database setup
+ * 
+ * RESPONSIBILITY: Initial user creation for system setup
+ * 
+ * MUST:
+ * - Create first user account securely
+ * - Hash passwords with bcrypt
+ * - Explicitly reject super-admin role
+ * - Validate input before creation
+ * - Be run in secure environment only
+ * 
+ * MUST NEVER:
+ * - Create super-admin users
+ * - Expose passwords or hashes
+ * - Be exposed as API endpoint
+ * - Bypass security constraints
+ * - Run automatically in production
  * 
  * SECURITY NOTE: This script should be run in a secure environment
  * and the created credentials should be stored securely.

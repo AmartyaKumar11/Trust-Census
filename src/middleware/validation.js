@@ -2,7 +2,22 @@ import { z } from 'zod';
 
 /**
  * Validation Middleware
- * Strict validation to prevent data misuse and ensure privacy
+ * 
+ * RESPONSIBILITY: Input validation schemas and validation middleware
+ * 
+ * MUST:
+ * - Validate all inputs using Zod schemas
+ * - Reject personal identifiers (Aadhaar, phone, biometrics, etc.)
+ * - Enforce explicit caste categories only (no inference)
+ * - Validate geographic codes format
+ * - Prevent super-admin role creation
+ * 
+ * MUST NEVER:
+ * - Accept personal identifiers in any form
+ * - Allow inferred or predicted caste classification
+ * - Bypass validation for any input
+ * - Accept super-admin role
+ * - Allow data that violates trust-first principles
  */
 
 // Geographic code validation (no personal identifiers)

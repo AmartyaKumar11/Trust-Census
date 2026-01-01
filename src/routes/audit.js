@@ -1,10 +1,23 @@
 import { getDB } from '../db/connection.js';
-import { logAuditEvent } from '../middleware/audit.js';
+import { logAuditEvent } from '../audit/logger.js';
 
 /**
  * Audit Routes
- * AUDITOR role can view audit logs
- * Read-only access to audit trail
+ * 
+ * RESPONSIBILITY: Read-only audit log viewing (AUDITOR role)
+ * 
+ * MUST:
+ * - Provide read-only access to audit logs
+ * - Support filtering and pagination
+ * - Require AUDITOR role
+ * - Log all audit log access
+ * 
+ * MUST NEVER:
+ * - Allow modification or deletion of audit logs
+ * - Expose raw census data in audit logs
+ * - Allow other roles to view audit logs
+ * - Bypass audit logging
+ * - Export audit logs in bulk
  */
 
 export async function auditRoutes(fastify) {

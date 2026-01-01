@@ -1,12 +1,27 @@
 import { getDB } from '../db/connection.js';
 import { validate, censusSubmissionSchema } from '../middleware/validation.js';
-import { logAuditEvent } from '../middleware/audit.js';
+import { logAuditEvent } from '../audit/logger.js';
 import { generateHash, validateNoPersonalData } from '../utils/security.js';
 
 /**
  * Census Submission Routes
- * One-way data flow: data can be submitted but never retrieved in raw form
- * NO raw data access after submission
+ * 
+ * RESPONSIBILITY: One-way data submission endpoints (DATA_ENTRY role)
+ * 
+ * MUST:
+ * - Accept census data submissions
+ * - Store data with one-way encryption/anonymization
+ * - Return only submission ID and hash (NO raw data)
+ * - Validate no personal identifiers
+ * - Generate integrity hashes
+ * - Require DATA_ENTRY role
+ * 
+ * MUST NEVER:
+ * - Return raw census data after submission
+ * - Allow data retrieval in raw form
+ * - Accept personal identifiers
+ * - Allow other roles to submit data
+ * - Export or download submissions
  */
 
 export async function submissionRoutes(fastify) {

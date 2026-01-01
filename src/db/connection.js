@@ -4,8 +4,22 @@ const { Pool } = pg;
 let pool = null;
 
 /**
- * Initialize database connection pool
- * Connection pooling for performance and security
+ * Database Connection Management
+ * 
+ * RESPONSIBILITY: Database connection pool initialization and lifecycle
+ * 
+ * MUST:
+ * - Provide connection pooling for performance
+ * - Handle connection lifecycle (init, get, close)
+ * - Manage connection pool configuration
+ * - Handle pool errors gracefully
+ * 
+ * MUST NEVER:
+ * - Contain business logic
+ * - Expose raw queries to routes
+ * - Bypass security constraints
+ * - Allow connection pool exhaustion
+ * - Store credentials in code
  */
 export function initDB() {
   if (pool) {

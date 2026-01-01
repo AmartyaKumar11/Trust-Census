@@ -5,7 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import { initDB, getDB } from './db/connection.js';
 import { authPlugin } from './middleware/auth.js';
-import { auditPlugin } from './middleware/audit.js';
+import { auditPlugin } from './audit/middleware.js';
 import { authRoutes } from './routes/auth.js';
 import { submissionRoutes } from './routes/submissions.js';
 import { aggregateRoutes } from './routes/aggregates.js';
@@ -15,8 +15,23 @@ import { auditRoutes } from './routes/audit.js';
 dotenv.config();
 
 /**
- * Trust Census Server
- * Government-grade, trust-first system for sensitive caste census data
+ * Trust Census Server - Application Entry Point
+ * 
+ * RESPONSIBILITY: Server initialization, plugin registration, route mounting
+ * 
+ * MUST:
+ * - Register all security middleware (auth, audit, validation)
+ * - Mount all API routes
+ * - Handle graceful shutdown
+ * - Initialize database connection
+ * - Configure security plugins (helmet, CORS, rate limiting)
+ * 
+ * MUST NEVER:
+ * - Contain business logic
+ * - Bypass security layers
+ * - Expose debug endpoints
+ * - Register routes without authentication where required
+ * - Allow super-admin role creation
  * 
  * Security Principles:
  * - No super-admin role
