@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import { initDB, getDB } from './db/connection.js';
+import { initAuditWriterPool } from './db/connections.js';
 import { authPlugin } from './middleware/auth.js';
 import { rbacPlugin } from './rbac/middleware.js';
 import { auditPlugin } from './audit/middleware.js';
@@ -80,9 +81,13 @@ await fastify.register(rateLimit, {
   }
 });
 
-// Initialize database
+// Initialize database connections
 initDB();
 const db = getDB();
+
+// Initialize audit writer pool (uses audit_writer role - L0 only)
+// This pool can ONLY INSERT into audit_logs, cannot read L1/L2/L3
+initAuditWriterPool();
 
 // Decorate fastify with database
 fastify.decorate('db', db);
@@ -93,7 +98,10 @@ await fastify.register(authPlugin);
 // Register RBAC (role-based access control)
 await fastify.register(rbacPlugin);
 
-// Register audit logging
+// Register MANDATORY audit logging
+// CANNOT be disabled via config or environment
+// Uses audit_writer database role exclusively
+// Enforces fail-closed behavior
 await fastify.register(auditPlugin);
 
 // Health check endpoint (no auth required, no data exposure)
