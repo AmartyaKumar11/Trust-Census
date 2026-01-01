@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import { initDB, getDB } from './db/connection.js';
 import { authPlugin } from './middleware/auth.js';
+import { rbacPlugin } from './rbac/middleware.js';
 import { auditPlugin } from './audit/middleware.js';
 import { authRoutes } from './routes/auth.js';
 import { submissionRoutes } from './routes/submissions.js';
@@ -86,8 +87,11 @@ const db = getDB();
 // Decorate fastify with database
 fastify.decorate('db', db);
 
-// Register authentication
+// Register authentication (identity verification)
 await fastify.register(authPlugin);
+
+// Register RBAC (role-based access control)
+await fastify.register(rbacPlugin);
 
 // Register audit logging
 await fastify.register(auditPlugin);

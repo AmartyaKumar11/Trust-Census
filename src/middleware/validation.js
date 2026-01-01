@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { 
+  SystemRoles, 
+  VALID_ROLES, 
+  isForbiddenRole,
+  LEGACY_ROLE_MAPPING
+} from '../rbac/roles.js';
 
 /**
  * Validation Middleware
@@ -10,13 +16,14 @@ import { z } from 'zod';
  * - Reject personal identifiers (Aadhaar, phone, biometrics, etc.)
  * - Enforce explicit caste categories only (no inference)
  * - Validate geographic codes format
- * - Prevent super-admin role creation
+ * - Prevent forbidden role creation (super-admin, etc.)
+ * - Only accept the 5 valid system roles
  * 
  * MUST NEVER:
  * - Accept personal identifiers in any form
  * - Allow inferred or predicted caste classification
  * - Bypass validation for any input
- * - Accept super-admin role
+ * - Accept forbidden roles (super-admin, etc.)
  * - Allow data that violates trust-first principles
  */
 
@@ -61,16 +68,43 @@ export const aggregateComputationSchema = z.object({
   ]).optional(),
 });
 
-// User creation schema (no super-admin)
+/**
+ * Valid roles for user creation
+ * Includes both new role names and legacy role names for backward compatibility
+ */
+const validRolesForCreation = [
+  // New role names
+  SystemRoles.CITIZEN,
+  SystemRoles.ENUMERATOR,
+  SystemRoles.SUPERVISOR,
+  SystemRoles.STATE_ANALYST,
+  SystemRoles.CENTRAL_POLICY_VIEWER,
+  // Legacy role names (for backward compatibility)
+  'DATA_ENTRY',
+  'AUDITOR',
+  'ANALYST',
+];
+
+// User creation schema (strict role validation)
 export const userCreationSchema = z.object({
   username: z.string().min(3).max(100).regex(/^[a-zA-Z0-9_]+$/),
   password: z.string().min(12).max(128),
-  role: z.enum(['DATA_ENTRY', 'AUDITOR', 'ANALYST']),
+  role: z.string().refine((role) => {
+    // Check if role is forbidden
+    if (isForbiddenRole(role)) {
+      return false;
+    }
+    // Check if role is in the valid list
+    return validRolesForCreation.includes(role.toUpperCase());
+  }, {
+    message: `Invalid role. Valid roles are: ${VALID_ROLES.join(', ')}`
+  }),
 }).refine((data) => {
-  // Explicitly prevent super-admin
-  return data.role !== 'SUPER_ADMIN';
+  // Explicitly prevent any forbidden role patterns
+  const role = data.role.toUpperCase();
+  return !isForbiddenRole(role);
 }, {
-  message: 'Super-admin role is not permitted'
+  message: 'This role is not permitted in the system'
 });
 
 /**
@@ -85,9 +119,11 @@ export function validate(schema) {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Generic error response - do not leak validation details
         return reply.code(400).send({
           error: 'Validation failed',
-          details: error.errors
+          // Only include field names, not detailed messages
+          fields: error.errors.map(e => e.path.join('.'))
         });
       }
       throw error;
@@ -95,3 +131,22 @@ export function validate(schema) {
   };
 }
 
+/**
+ * Role validation function
+ * Returns true if role is valid, false otherwise
+ */
+export function isValidRoleForCreation(role) {
+  if (!role || typeof role !== 'string') {
+    return false;
+  }
+  
+  const normalizedRole = role.toUpperCase().trim();
+  
+  // Check if forbidden
+  if (isForbiddenRole(normalizedRole)) {
+    return false;
+  }
+  
+  // Check if in valid list
+  return validRolesForCreation.includes(normalizedRole);
+}
