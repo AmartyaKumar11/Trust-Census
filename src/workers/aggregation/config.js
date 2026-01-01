@@ -39,8 +39,12 @@ export const MICRO_AGGREGATION_CONFIG = Object.freeze({
   /**
    * Geographic levels for micro-aggregation
    * Only these levels produce L2 aggregates
+   * 
+   * NOTE: Village and household level aggregation is FORBIDDEN
+   * to prevent identification of small communities.
+   * Only district level and above is permitted.
    */
-  ALLOWED_GEOGRAPHIC_LEVELS: Object.freeze(['block', 'village']),
+  ALLOWED_GEOGRAPHIC_LEVELS: Object.freeze(['district', 'state']),
 
   /**
    * Caste categories to aggregate

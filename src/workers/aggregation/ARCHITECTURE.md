@@ -72,7 +72,10 @@ triggered or influenced by users.
 
 ### Purpose
 Transform raw census submissions into threshold-protected micro-aggregates
-at block and village level.
+at district and state level ONLY.
+
+**IMPORTANT**: Village and block level aggregation is FORBIDDEN to prevent
+identification of small communities. Only district level and above is permitted.
 
 ### Execution Rules
 - **Trigger**: Scheduled cron job or manual admin task (NOT user-triggered)
@@ -80,26 +83,51 @@ at block and village level.
 - **Time Window**: Processes submissions from a fixed, closed time window
 - **Idempotency**: Each time window is processed exactly once
 
+### Geographic Level Constraints
+
+| Level | Permitted | Rationale |
+|-------|-----------|-----------|
+| District | ✅ YES | Sufficient population for anonymity |
+| State | ✅ YES | Large population ensures privacy |
+| Block | ❌ FORBIDDEN | Too granular, risks identification |
+| Village | ❌ FORBIDDEN | Too granular, risks identification |
+| Household | ❌ FORBIDDEN | Individual-level, strictly forbidden |
+
 ### Safety Constraints
 
 | Constraint | Value | Rationale |
 |------------|-------|-----------|
 | Minimum group size (k-anonymity) | k ≥ 5 | Prevents individual identification |
 | Minimum submissions per aggregate | 5 | Statistical validity |
-| Geographic suppression | Village < 5 submissions → suppress | Privacy protection |
-| Caste category suppression | Category < 5 in area → suppress | Minority protection |
+| Groups below k | DROPPED entirely | No masking, rounding, or partial emission |
+| Dropped group logging | FORBIDDEN | Cannot log details of dropped groups |
 
 ### Output
-- `micro_aggregates` table entries
-- Computation metadata (timestamp, hash)
-- Suppression flags for small groups
+- `micro_aggregates` table entries (district and state level only)
+- Computation metadata (timestamp, hash, aggregation_window_id)
+- NO suppressed groups are written (they are dropped entirely)
+
+### L2 Table Fields
+| Field | Description |
+|-------|-------------|
+| geographic_level | 'district' or 'state' only |
+| geographic_code | District or state code |
+| caste_category | SC, ST, OBC, GENERAL, OTHER |
+| submission_count | Number of submissions in group |
+| population_count | Total population in group |
+| aggregation_window_id | Identifies the time window |
+| created_at | Timestamp of aggregate creation |
 
 ### Invariants
 - ❌ Cannot be triggered via HTTP
 - ❌ Cannot accept user parameters
 - ❌ Cannot output individual records
-- ✅ Must suppress groups below threshold
-- ✅ Must be append-only (no updates)
+- ❌ Cannot aggregate at village, block, or household level
+- ❌ Cannot mask, round, or partially emit suppressed groups
+- ❌ Cannot log dropped group details or raw census values
+- ✅ Must DROP groups below k-anonymity threshold entirely
+- ✅ Must be append-only (INSERT only, no UPDATE or DELETE)
+- ✅ Must have no foreign keys or identifiers linking back to L1
 
 ---
 
@@ -336,15 +364,25 @@ src/workers/aggregation/
 
 ---
 
-## NOT Implemented Yet
+## Implementation Status
+
+### Implemented
+
+1. **Stage A: Micro-Aggregation** (`src/workers/aggregation/stages/micro.js`)
+   - SQL queries for district and state level aggregation
+   - K-anonymity threshold enforcement (DROP, not mask)
+   - INSERT-only writes to L2
+   - Non-sensitive logging (counts only, no raw data)
+   - Aggregation window ID generation
+
+### NOT Implemented Yet
 
 The following components are placeholders and will be implemented in a future phase:
 
-1. **Aggregation SQL queries** - Stage A and Stage B computation logic
-2. **Threshold enforcement** - K-anonymity suppression
-3. **Privacy noise** - Differential privacy implementation
-4. **Scheduling** - Cron job configuration
-5. **Monitoring** - Aggregation job status tracking
+1. **Stage B: Macro-Aggregation** - L2 → L3 computation logic
+2. **Privacy noise** - Differential privacy implementation
+3. **Scheduling** - Cron job configuration
+4. **Monitoring** - Aggregation job status tracking
 
 ---
 

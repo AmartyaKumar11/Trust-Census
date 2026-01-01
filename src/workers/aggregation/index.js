@@ -25,6 +25,7 @@
  * - Allow reverse data flow
  */
 
+import pg from 'pg';
 import { 
   validateConfiguration, 
   getConfigurationSummary,
@@ -36,6 +37,12 @@ import {
   info,
   error,
 } from './logger.js';
+import { 
+  executeMicroAggregation as runMicroAggregation,
+  validateMicroAggregationConfig,
+} from './stages/micro.js';
+
+const { Pool } = pg;
 
 /**
  * Generate a unique job ID
@@ -125,31 +132,48 @@ Security Notes:
 }
 
 /**
- * Placeholder for Stage A: Micro-Aggregation (L1 → L2)
+ * Create database connection pool for aggregation_worker role
  * 
- * NOT IMPLEMENTED YET
- * This function will:
- * - Read from census_submissions (L1)
- * - Apply k-anonymity thresholds
- * - Write to micro_aggregates (L2)
+ * This pool uses the aggregation_worker database role which:
+ * - Can SELECT from census_submissions (L1)
+ * - Can INSERT to micro_aggregates (L2)
+ * - Can INSERT to macro_aggregates (L3)
+ * - CANNOT access audit_logs, users, consent_records
  */
-async function executeMicroAggregation(logger) {
-  logger.info('Stage A: Micro-Aggregation (L1 → L2)', { status: 'NOT_IMPLEMENTED' });
-  
-  // PLACEHOLDER: Actual implementation will:
-  // 1. Connect to database using aggregation_worker role
-  // 2. Query census_submissions for previous day's submissions
-  // 3. Group by geographic area and caste category
-  // 4. Apply k-anonymity threshold (suppress groups < k)
-  // 5. Insert results into micro_aggregates
-  // 6. Return summary statistics (no raw data)
+function createAggregationWorkerPool() {
+  const pool = new Pool({
+    user: process.env.DB_AGGREGATION_WORKER_USER || DATABASE_CONFIG.ROLE,
+    password: process.env.DB_AGGREGATION_WORKER_PASSWORD,
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'trust_census',
+    max: DATABASE_CONFIG.POOL.MAX,
+    idleTimeoutMillis: DATABASE_CONFIG.POOL.IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: DATABASE_CONFIG.POOL.CONNECTION_TIMEOUT_MS,
+  });
 
-  return {
-    status: 'NOT_IMPLEMENTED',
-    recordsProcessed: 0,
-    aggregatesCreated: 0,
-    aggregatesSuppressed: 0,
-  };
+  return pool;
+}
+
+/**
+ * Stage A: Micro-Aggregation (L1 → L2)
+ * 
+ * Executes micro-aggregation using the implementation in stages/micro.js
+ * - Reads from census_submissions (L1)
+ * - Applies k-anonymity thresholds (DROPS groups below k)
+ * - Writes to micro_aggregates (L2)
+ * - Aggregates at district and state level ONLY
+ */
+async function executeMicroAggregation(dbPool, logger) {
+  logger.info('Stage A: Micro-Aggregation (L1 → L2)', { status: 'STARTING' });
+  
+  // Validate micro-aggregation configuration
+  validateMicroAggregationConfig();
+  
+  // Execute micro-aggregation
+  const result = await runMicroAggregation(dbPool, logger);
+  
+  return result;
 }
 
 /**
@@ -161,16 +185,15 @@ async function executeMicroAggregation(logger) {
  * - Apply differential privacy noise
  * - Write to macro_aggregates (L3)
  */
-async function executeMacroAggregation(logger) {
+async function executeMacroAggregation(dbPool, logger) {
   logger.info('Stage B: Macro-Aggregation (L2 → L3)', { status: 'NOT_IMPLEMENTED' });
   
   // PLACEHOLDER: Actual implementation will:
-  // 1. Connect to database using aggregation_worker role
-  // 2. Query micro_aggregates for previous week's aggregates
-  // 3. Roll up to district/state/national level
-  // 4. Apply differential privacy noise (Laplace mechanism)
-  // 5. Insert results into macro_aggregates
-  // 6. Return summary statistics (no raw data)
+  // 1. Query micro_aggregates for previous week's aggregates
+  // 2. Roll up to district/state/national level
+  // 3. Apply differential privacy noise (Laplace mechanism)
+  // 4. Insert results into macro_aggregates
+  // 5. Return summary statistics (no raw data)
 
   return {
     status: 'NOT_IMPLEMENTED',
@@ -187,6 +210,7 @@ async function main() {
   const startTime = Date.now();
   const jobId = generateJobId();
   const logger = createJobLogger(jobId);
+  let dbPool = null;
 
   info('='.repeat(60));
   info('Offline Aggregation Worker Starting', { job_id: jobId });
@@ -216,6 +240,14 @@ async function main() {
       process.exit(0);
     }
 
+    // Create database connection pool
+    info('Creating database connection pool...');
+    dbPool = createAggregationWorkerPool();
+    
+    // Verify database connection
+    await dbPool.query('SELECT 1');
+    info('Database connection established', { role: DATABASE_CONFIG.ROLE });
+
     // Execute aggregation based on stage
     const results = {
       micro: null,
@@ -224,13 +256,13 @@ async function main() {
 
     if (options.stage === EXECUTION_MODES.MICRO || options.stage === EXECUTION_MODES.FULL) {
       logger.logStart('micro', configSummary.microAggregation);
-      results.micro = await executeMicroAggregation(logger);
+      results.micro = await executeMicroAggregation(dbPool, logger);
       logger.logComplete('micro', results.micro);
     }
 
     if (options.stage === EXECUTION_MODES.MACRO || options.stage === EXECUTION_MODES.FULL) {
       logger.logStart('macro', configSummary.macroAggregation);
-      results.macro = await executeMacroAggregation(logger);
+      results.macro = await executeMacroAggregation(dbPool, logger);
       logger.logComplete('macro', results.macro);
     }
 
@@ -246,6 +278,11 @@ async function main() {
     });
     info('='.repeat(60));
 
+    // Close database connection
+    if (dbPool) {
+      await dbPool.end();
+    }
+
     process.exit(0);
 
   } catch (err) {
@@ -255,6 +292,15 @@ async function main() {
       duration_ms: durationMs,
       error_type: err.name || 'Error',
     });
+    
+    // Close database connection on error
+    if (dbPool) {
+      try {
+        await dbPool.end();
+      } catch (e) {
+        // Ignore pool close errors
+      }
+    }
     
     // Log error to stderr (without sensitive details)
     console.error(`FATAL: ${err.message}`);
@@ -274,5 +320,6 @@ export {
   executeMicroAggregation, 
   executeMacroAggregation,
   generateJobId,
+  createAggregationWorkerPool,
 };
 
