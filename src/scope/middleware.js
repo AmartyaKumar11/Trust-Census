@@ -48,9 +48,10 @@ const SCOPE_DENIED_RESPONSE = Object.freeze({
  * Maps route patterns to their required purpose
  */
 const ROUTE_PURPOSE_MAP = Object.freeze({
-  // Submission routes
+  // Submission routes (WRITE-ONLY for L1)
   'POST:/submissions': PurposeCategory.CENSUS_SUBMISSION,
-  'GET:/submissions/:id/verify': PurposeCategory.SUBMISSION_VERIFY,
+  'GET:/submissions/receipt/:receiptId': PurposeCategory.SUBMISSION_VERIFY,
+  'GET:/submissions/metadata': PurposeCategory.METADATA_READ,
   
   // Aggregate routes
   'POST:/aggregates/compute': PurposeCategory.AGGREGATE_COMPUTE,
