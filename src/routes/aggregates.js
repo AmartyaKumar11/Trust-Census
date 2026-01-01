@@ -1,215 +1,118 @@
-import { getDB } from '../db/connection.js';
-import { validate, aggregateComputationSchema } from '../middleware/validation.js';
-import { logAuditEvent } from '../audit/logger.js';
-import { generateHash } from '../utils/security.js';
-
 /**
- * Aggregate Computation Routes
+ * Aggregate Routes (DISABLED)
  * 
- * RESPONSIBILITY: Aggregate statistics computation (ANALYST role)
+ * RESPONSIBILITY: This file is a PLACEHOLDER that explicitly forbids
+ * HTTP-triggered aggregation.
  * 
- * MUST:
- * - Compute aggregates from stored data
- * - Return only aggregate statistics (NO raw data)
- * - Store computation hashes for audit
- * - Require ANALYST role
- * - Prevent reverse engineering of raw data
+ * AGGREGATION VIA HTTP IS FORBIDDEN:
+ * - Aggregation MUST NOT be triggered via HTTP API
+ * - Aggregation MUST be performed by offline background workers
+ * - Aggregation workers use the aggregation_worker database role
+ * - No application-layer code should SELECT from L1 (census_submissions)
  * 
- * MUST NEVER:
- * - Return raw census data
- * - Allow reverse data flow from aggregates
- * - Expose individual submission details
- * - Allow other roles to compute aggregates
- * - Export or download raw data
+ * WHY THIS FILE EXISTS:
+ * - Documents the architectural decision to forbid HTTP aggregation
+ * - Prevents accidental re-implementation of forbidden endpoints
+ * - Provides clear error messages if someone tries to access aggregate routes
+ * 
+ * FUTURE IMPLEMENTATION:
+ * - Aggregation will be implemented as offline batch jobs
+ * - Jobs will run on a separate worker service
+ * - Jobs will use the aggregation_worker database role
+ * - Results will be stored in L2/L3 tables
+ * - StateAnalyst can READ pre-computed aggregates from L2/L3
+ * 
+ * FORBIDDEN ENDPOINTS (WILL NEVER BE IMPLEMENTED):
+ * - POST /aggregates/compute - Triggers L1 read via HTTP
+ * - POST /aggregates/compute/macro - Triggers L1 read via HTTP
+ * - Any endpoint that reads from census_submissions
+ * 
+ * PERMITTED ENDPOINTS (TO BE IMPLEMENTED LATER):
+ * - GET /aggregates/:id - Read pre-computed aggregate from L2/L3
+ * - GET /aggregates - List pre-computed aggregates from L2/L3
+ * - GET /aggregates/:id/verify - Verify aggregate hash
+ * 
+ * These read-only endpoints will use analytics_reader role which
+ * has NO access to L1 (census_submissions).
  */
 
+/**
+ * Generic forbidden response
+ */
+const AGGREGATION_FORBIDDEN_RESPONSE = Object.freeze({
+  error: 'Aggregation via HTTP is not permitted',
+  message: 'Aggregation must be performed by authorized offline workers. This endpoint does not exist.',
+  code: 'AGGREGATION_FORBIDDEN'
+});
+
+/**
+ * Aggregate routes - DISABLED
+ * 
+ * This function registers placeholder routes that return 403 Forbidden
+ * for any aggregation-related requests.
+ */
 export async function aggregateRoutes(fastify) {
-  // Compute aggregate statistics
-  // ANALYST role only
+  /**
+   * POST /aggregates/compute - FORBIDDEN
+   * 
+   * This endpoint is STRUCTURALLY FORBIDDEN.
+   * Aggregation must be performed by offline workers, not via HTTP.
+   */
   fastify.post('/aggregates/compute', {
-    preHandler: [
-      fastify.authenticate,
-      fastify.requireRole('ANALYST'),
-      validate(aggregateComputationSchema)
-    ],
     schema: {
-      description: 'Compute aggregate statistics (no raw data access)',
-      security: [{ bearerAuth: [] }],
-      body: {
-        type: 'object',
-        required: ['geographicLevel', 'geographicCode'],
-        properties: {
-          geographicLevel: {
-            type: 'string',
-            enum: ['state', 'district', 'block', 'village']
-          },
-          geographicCode: { type: 'string' },
-          casteCategory: {
-            type: 'string',
-            enum: ['SC', 'ST', 'OBC', 'GENERAL', 'OTHER', 'ALL']
-          }
-        }
-      }
+      description: 'FORBIDDEN: Aggregation via HTTP is not permitted',
+      tags: ['forbidden'],
     }
   }, async (request, reply) => {
-    const db = getDB();
-    const { geographicLevel, geographicCode, casteCategory } = request.body;
-
-    // Build query based on geographic level
-    // Only aggregates are computed, NO raw data is returned
-    let query;
-    let queryParams;
-
-    if (geographicLevel === 'state') {
-      query = `
-        SELECT 
-          state_code as geographic_code,
-          caste_category,
-          SUM(household_count) as total_households,
-          SUM(population_count) as total_population,
-          COUNT(*) as submission_count
-        FROM census_submissions
-        WHERE state_code = $1
-        ${casteCategory && casteCategory !== 'ALL' ? 'AND caste_category = $2' : ''}
-        GROUP BY state_code, caste_category
-      `;
-      queryParams = casteCategory && casteCategory !== 'ALL' 
-        ? [geographicCode, casteCategory]
-        : [geographicCode];
-    } else if (geographicLevel === 'district') {
-      query = `
-        SELECT 
-          district_code as geographic_code,
-          caste_category,
-          SUM(household_count) as total_households,
-          SUM(population_count) as total_population,
-          COUNT(*) as submission_count
-        FROM census_submissions
-        WHERE district_code = $1
-        ${casteCategory && casteCategory !== 'ALL' ? 'AND caste_category = $2' : ''}
-        GROUP BY district_code, caste_category
-      `;
-      queryParams = casteCategory && casteCategory !== 'ALL'
-        ? [geographicCode, casteCategory]
-        : [geographicCode];
-    } else if (geographicLevel === 'block') {
-      query = `
-        SELECT 
-          block_code as geographic_code,
-          caste_category,
-          SUM(household_count) as total_households,
-          SUM(population_count) as total_population,
-          COUNT(*) as submission_count
-        FROM census_submissions
-        WHERE block_code = $1
-        ${casteCategory && casteCategory !== 'ALL' ? 'AND caste_category = $2' : ''}
-        GROUP BY block_code, caste_category
-      `;
-      queryParams = casteCategory && casteCategory !== 'ALL'
-        ? [geographicCode, casteCategory]
-        : [geographicCode];
-    } else if (geographicLevel === 'village') {
-      query = `
-        SELECT 
-          village_code as geographic_code,
-          caste_category,
-          SUM(household_count) as total_households,
-          SUM(population_count) as total_population,
-          COUNT(*) as submission_count
-        FROM census_submissions
-        WHERE village_code = $1
-        ${casteCategory && casteCategory !== 'ALL' ? 'AND caste_category = $2' : ''}
-        GROUP BY village_code, caste_category
-      `;
-      queryParams = casteCategory && casteCategory !== 'ALL'
-        ? [geographicCode, casteCategory]
-        : [geographicCode];
-    } else {
-      return reply.code(400).send({ error: 'Invalid geographic level' });
-    }
-
-    // Execute aggregate query (NO raw data returned)
-    const result = await db.query(query, queryParams);
-
-    if (result.rows.length === 0) {
-      return reply.code(404).send({ 
-        error: 'No data found for the specified geographic area' 
-      });
-    }
-
-    // Compute hash for integrity verification
-    const aggregateData = {
-      geographicLevel,
-      geographicCode,
-      casteCategory: casteCategory || 'ALL',
-      aggregates: result.rows,
-      computedAt: new Date().toISOString()
-    };
-    const computationHash = generateHash(aggregateData);
-
-    // Store computation for audit trail
-    for (const row of result.rows) {
-      await db.query(
-        `INSERT INTO aggregate_computations (
-          computation_type, geographic_level, geographic_code,
-          caste_category, aggregate_value, computed_by, computation_hash
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          'POPULATION_AGGREGATE',
-          geographicLevel,
-          geographicCode,
-          row.caste_category,
-          row.total_population,
-          request.user.id,
-          computationHash
-        ]
-      );
-    }
-
-    // Log audit event
-    await logAuditEvent(fastify, {
-      userId: request.user.id,
-      actionType: 'AGGREGATE_COMPUTED',
-      resourceType: 'aggregate',
-      resourceId: null,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-      requestMethod: request.method,
-      requestPath: request.url,
-      statusCode: 200,
-      metadata: {
-        geographicLevel,
-        geographicCode,
-        casteCategory: casteCategory || 'ALL',
-        resultCount: result.rows.length
-      }
+    // Log the forbidden attempt
+    fastify.log.warn({
+      msg: 'Forbidden aggregation attempt via HTTP',
+      ip: request.ip,
+      user: request.user?.id,
+      path: request.url,
     });
 
-    // Return aggregates only (NO raw data, NO reverse engineering possible)
-    return reply.send({
-      geographicLevel,
-      geographicCode,
-      casteCategory: casteCategory || 'ALL',
-      aggregates: result.rows.map(row => ({
-        casteCategory: row.caste_category,
-        totalHouseholds: parseInt(row.total_households),
-        totalPopulation: parseInt(row.total_population),
-        submissionCount: parseInt(row.submission_count)
-      })),
-      computationHash,
-      computedAt: aggregateData.computedAt,
-      note: 'These are aggregate statistics only. Raw data is not accessible.'
-    });
+    return reply.code(403).send(AGGREGATION_FORBIDDEN_RESPONSE);
   });
 
-  // Get stored aggregate computations (read-only)
+  /**
+   * POST /aggregates/compute/macro - FORBIDDEN
+   * 
+   * This endpoint is STRUCTURALLY FORBIDDEN.
+   * Macro-aggregation must be performed by offline workers, not via HTTP.
+   */
+  fastify.post('/aggregates/compute/macro', {
+    schema: {
+      description: 'FORBIDDEN: Aggregation via HTTP is not permitted',
+      tags: ['forbidden'],
+    }
+  }, async (request, reply) => {
+    fastify.log.warn({
+      msg: 'Forbidden macro-aggregation attempt via HTTP',
+      ip: request.ip,
+      user: request.user?.id,
+      path: request.url,
+    });
+
+    return reply.code(403).send(AGGREGATION_FORBIDDEN_RESPONSE);
+  });
+
+  /**
+   * GET /aggregates/:id - PLACEHOLDER
+   * 
+   * This endpoint will be implemented to read PRE-COMPUTED aggregates
+   * from L2/L3 tables. It will use analytics_reader role which has
+   * NO access to L1.
+   * 
+   * Currently returns 501 Not Implemented.
+   */
   fastify.get('/aggregates/:id', {
     preHandler: [
       fastify.authenticate,
       fastify.requireRole('ANALYST', 'AUDITOR')
     ],
     schema: {
-      description: 'Retrieve stored aggregate computation (no raw data)',
+      description: 'Read pre-computed aggregate (NOT YET IMPLEMENTED)',
       security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
@@ -219,48 +122,67 @@ export async function aggregateRoutes(fastify) {
       }
     }
   }, async (request, reply) => {
-    const db = getDB();
-    const { id } = request.params;
-
-    const result = await db.query(
-      `SELECT 
-        id, computation_type, geographic_level, geographic_code,
-        caste_category, aggregate_value, computed_at, computation_hash
-      FROM aggregate_computations
-      WHERE id = $1`,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return reply.code(404).send({ error: 'Aggregate computation not found' });
-    }
-
-    const aggregate = result.rows[0];
-
-    // Log audit event
-    await logAuditEvent(fastify, {
-      userId: request.user.id,
-      actionType: 'AGGREGATE_ACCESSED',
-      resourceType: 'aggregate',
-      resourceId: id,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-      requestMethod: request.method,
-      requestPath: request.url,
-      statusCode: 200,
-      metadata: {}
-    });
-
-    return reply.send({
-      id: aggregate.id,
-      computationType: aggregate.computation_type,
-      geographicLevel: aggregate.geographic_level,
-      geographicCode: aggregate.geographic_code,
-      casteCategory: aggregate.caste_category,
-      aggregateValue: aggregate.aggregate_value,
-      computedAt: aggregate.computed_at,
-      computationHash: aggregate.computation_hash
+    // This will read from L2/L3 tables (aggregate_computations, micro_aggregates, macro_aggregates)
+    // NOT from census_submissions (L1)
+    // Implementation deferred to offline aggregation phase
+    return reply.code(501).send({
+      error: 'Not implemented',
+      message: 'Pre-computed aggregate retrieval will be available after offline aggregation is implemented.',
+      code: 'NOT_IMPLEMENTED'
     });
   });
-}
 
+  /**
+   * GET /aggregates - PLACEHOLDER
+   * 
+   * This endpoint will list pre-computed aggregates from L2/L3.
+   * Currently returns 501 Not Implemented.
+   */
+  fastify.get('/aggregates', {
+    preHandler: [
+      fastify.authenticate,
+      fastify.requireRole('ANALYST')
+    ],
+    schema: {
+      description: 'List pre-computed aggregates (NOT YET IMPLEMENTED)',
+      security: [{ bearerAuth: [] }],
+    }
+  }, async (request, reply) => {
+    return reply.code(501).send({
+      error: 'Not implemented',
+      message: 'Aggregate listing will be available after offline aggregation is implemented.',
+      code: 'NOT_IMPLEMENTED'
+    });
+  });
+
+  /**
+   * GET /aggregates/:id/verify - PLACEHOLDER
+   * 
+   * This endpoint will verify aggregate computation hash.
+   * Currently returns 501 Not Implemented.
+   */
+  fastify.get('/aggregates/:id/verify', {
+    preHandler: [
+      fastify.authenticate,
+      fastify.requireRole('ANALYST', 'AUDITOR')
+    ],
+    schema: {
+      description: 'Verify aggregate computation hash (NOT YET IMPLEMENTED)',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    return reply.code(501).send({
+      error: 'Not implemented',
+      message: 'Aggregate verification will be available after offline aggregation is implemented.',
+      code: 'NOT_IMPLEMENTED'
+    });
+  });
+
+  fastify.log.info('Aggregate routes registered (HTTP aggregation FORBIDDEN, read endpoints NOT YET IMPLEMENTED)');
+}

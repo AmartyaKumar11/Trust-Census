@@ -53,9 +53,9 @@ const ROUTE_PURPOSE_MAP = Object.freeze({
   'GET:/submissions/receipt/:receiptId': PurposeCategory.SUBMISSION_VERIFY,
   'GET:/submissions/metadata': PurposeCategory.METADATA_READ,
   
-  // Aggregate routes
-  'POST:/aggregates/compute': PurposeCategory.AGGREGATE_COMPUTE,
-  'POST:/aggregates/compute/macro': PurposeCategory.AGGREGATE_COMPUTE,
+  // Aggregate routes (HTTP compute is FORBIDDEN, read endpoints are placeholders)
+  // POST:/aggregates/compute - FORBIDDEN (returns 403)
+  // POST:/aggregates/compute/macro - FORBIDDEN (returns 403)
   'GET:/aggregates': PurposeCategory.AGGREGATE_READ,
   'GET:/aggregates/:id': PurposeCategory.AGGREGATE_READ,
   'GET:/aggregates/:id/verify': PurposeCategory.AGGREGATE_READ,

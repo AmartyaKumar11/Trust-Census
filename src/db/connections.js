@@ -287,56 +287,73 @@ export function getPoolForRole(role) {
 /**
  * Verify database role permissions
  * Used for health checks and auditing
+ * 
+ * IMPORTANT: This function tests that roles CANNOT access data they shouldn't.
+ * The SELECT queries are intentionally expected to FAIL for proper enforcement.
+ * 
+ * Expected results:
+ * - api_writer.canReadSubmissions = false (GOOD - L1 is write-only)
+ * - audit_writer.canReadAuditLogs = false (GOOD - L0 is append-only)
+ * - analytics_reader.canReadSubmissions = false (GOOD - no L1 access)
  */
 export async function verifyRolePermissions() {
   const results = {};
 
   // Test api_writer
+  // EXPECTED: Can connect, CANNOT read from census_submissions
   try {
     const pool = getApiWriterPool();
     await pool.query('SELECT 1');
     results.apiWriter = { connected: true };
     
-    // Verify cannot SELECT from census_submissions
+    // Verify cannot SELECT from census_submissions (L1 is write-only)
+    // This query SHOULD fail - that's the correct behavior
     try {
-      await pool.query('SELECT * FROM census_submissions LIMIT 1');
-      results.apiWriter.canReadSubmissions = true; // This is BAD
+      await pool.query('SELECT id FROM census_submissions LIMIT 1');
+      results.apiWriter.canReadSubmissions = true; // VIOLATION: L1 should be write-only
+      results.apiWriter.violation = 'api_writer should NOT be able to read census_submissions';
     } catch (e) {
-      results.apiWriter.canReadSubmissions = false; // This is GOOD
+      results.apiWriter.canReadSubmissions = false; // CORRECT: L1 is write-only
     }
   } catch (e) {
     results.apiWriter = { connected: false, error: e.message };
   }
 
   // Test audit_writer
+  // EXPECTED: Can connect, CANNOT read from audit_logs
   try {
     const pool = getAuditWriterPool();
     await pool.query('SELECT 1');
     results.auditWriter = { connected: true };
     
-    // Verify cannot SELECT from audit_logs
+    // Verify cannot SELECT from audit_logs (L0 is append-only)
+    // This query SHOULD fail - that's the correct behavior
     try {
-      await pool.query('SELECT * FROM audit_logs LIMIT 1');
-      results.auditWriter.canReadAuditLogs = true; // This is BAD
+      await pool.query('SELECT id FROM audit_logs LIMIT 1');
+      results.auditWriter.canReadAuditLogs = true; // VIOLATION: audit_writer should be append-only
+      results.auditWriter.violation = 'audit_writer should NOT be able to read audit_logs';
     } catch (e) {
-      results.auditWriter.canReadAuditLogs = false; // This is GOOD
+      results.auditWriter.canReadAuditLogs = false; // CORRECT: L0 is append-only
     }
   } catch (e) {
     results.auditWriter = { connected: false, error: e.message };
   }
 
   // Test analytics_reader
+  // EXPECTED: Can connect, CANNOT read from census_submissions (L1)
   try {
     const pool = getAnalyticsReaderPool();
     await pool.query('SELECT 1');
     results.analyticsReader = { connected: true };
     
-    // Verify cannot SELECT from census_submissions
+    // Verify cannot SELECT from census_submissions (no L1 access)
+    // This query SHOULD fail - that's the correct behavior
     try {
-      await pool.query('SELECT * FROM census_submissions LIMIT 1');
-      results.analyticsReader.canReadSubmissions = true; // This is BAD
+      await pool.query('SELECT id FROM census_submissions LIMIT 1');
+      results.analyticsReader.canReadSubmissions = true; // VIOLATION: analytics_reader should not access L1
+      results.analyticsReader.violation = 'analytics_reader should NOT be able to read census_submissions';
     } catch (e) {
-      results.analyticsReader.canReadSubmissions = false; // This is GOOD
+      results.analyticsReader.canReadSubmissions = false; // CORRECT: no L1 access
     }
   } catch (e) {
     results.analyticsReader = { connected: false, error: e.message };

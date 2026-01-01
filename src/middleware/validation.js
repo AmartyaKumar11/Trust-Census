@@ -59,7 +59,20 @@ export const censusSubmissionSchema = z.object({
   message: 'Population count must be greater than or equal to household count'
 });
 
-// Aggregate computation schema
+/**
+ * Aggregate computation schema
+ * 
+ * NOTE: HTTP-triggered aggregation is FORBIDDEN.
+ * This schema is retained for future offline worker validation only.
+ * The HTTP routes that would use this schema return 403 Forbidden.
+ * 
+ * Aggregation will be implemented as offline batch jobs that:
+ * - Run on a separate worker service
+ * - Use the aggregation_worker database role
+ * - Store results in L2/L3 tables
+ * 
+ * @deprecated for HTTP use - aggregation via HTTP is forbidden
+ */
 export const aggregateComputationSchema = z.object({
   geographicLevel: z.enum(['state', 'district', 'block', 'village']),
   geographicCode: z.string().min(2).max(10),
