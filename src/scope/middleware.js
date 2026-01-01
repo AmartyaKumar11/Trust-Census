@@ -67,14 +67,16 @@ const ROUTE_PURPOSE_MAP = Object.freeze({
   'GET:/audit/logs': PurposeCategory.AUDIT_READ,
   'GET:/audit/logs/:id': PurposeCategory.AUDIT_READ,
   
-  // Consent routes
+  // Consent routes (L0)
+  'POST:/consent/capture': PurposeCategory.CONSENT_MANAGE,
+  'GET:/consent/verify/:receiptId': PurposeCategory.CONSENT_MANAGE,
+  'GET:/consent/status': PurposeCategory.METADATA_READ, // Supervisor aggregate view
   'POST:/citizen/consent': PurposeCategory.CONSENT_MANAGE,
   'DELETE:/citizen/consent': PurposeCategory.CONSENT_MANAGE,
   'GET:/citizen/consent': PurposeCategory.CONSENT_MANAGE,
   
   // Metadata routes
   'GET:/submissions/metadata': PurposeCategory.METADATA_READ,
-  'GET:/consent/status': PurposeCategory.METADATA_READ,
   
   // Auth routes (special handling)
   'POST:/auth/login': PurposeCategory.AUTHENTICATION,

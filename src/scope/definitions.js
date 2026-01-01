@@ -117,11 +117,13 @@ export const SCOPE_ALLOWED_PURPOSES = Object.freeze({
   [FunctionalScope.SUBMISSION]: [
     PurposeCategory.CENSUS_SUBMISSION,
     PurposeCategory.SUBMISSION_VERIFY,
+    PurposeCategory.CONSENT_MANAGE, // Enumerator can capture consent on behalf of Citizen
     PurposeCategory.AUTHENTICATION,
   ],
   [FunctionalScope.OVERSIGHT]: [
     PurposeCategory.AUDIT_READ,
     PurposeCategory.METADATA_READ,
+    PurposeCategory.CONSENT_MANAGE, // Supervisor can verify consent exists
     PurposeCategory.AUTHENTICATION,
   ],
   [FunctionalScope.ANALYSIS]: [

@@ -13,6 +13,7 @@ import { authRoutes } from './routes/auth.js';
 import { submissionRoutes } from './routes/submissions.js';
 import { aggregateRoutes } from './routes/aggregates.js';
 import { auditRoutes } from './routes/audit.js';
+import { consentRoutes } from './routes/consent.js';
 
 // Load environment variables
 dotenv.config();
@@ -129,6 +130,7 @@ fastify.get('/health', async (request, reply) => {
 
 // Register routes
 await fastify.register(authRoutes);
+await fastify.register(consentRoutes);  // Consent routes (L0) - must be before submissions
 await fastify.register(submissionRoutes);
 await fastify.register(aggregateRoutes);
 await fastify.register(auditRoutes);
