@@ -7,6 +7,7 @@ import { initDB, getDB } from './db/connection.js';
 import { initAuditWriterPool } from './db/connections.js';
 import { authPlugin } from './middleware/auth.js';
 import { rbacPlugin } from './rbac/middleware.js';
+import { scopePlugin } from './scope/middleware.js';
 import { auditPlugin } from './audit/middleware.js';
 import { authRoutes } from './routes/auth.js';
 import { submissionRoutes } from './routes/submissions.js';
@@ -92,11 +93,16 @@ initAuditWriterPool();
 // Decorate fastify with database
 fastify.decorate('db', db);
 
-// Register authentication (identity verification)
+// Register authentication (identity verification + scope metadata)
 await fastify.register(authPlugin);
 
 // Register RBAC (role-based access control)
 await fastify.register(rbacPlugin);
+
+// Register scope and purpose enforcement
+// Runs AFTER RBAC, ensures valid roles act only within assigned scope
+// Enforces geographic scope and purpose binding
+await fastify.register(scopePlugin);
 
 // Register MANDATORY audit logging
 // CANNOT be disabled via config or environment

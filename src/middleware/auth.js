@@ -12,15 +12,17 @@ import {
 /**
  * Authentication Middleware
  * 
- * RESPONSIBILITY: JWT authentication and identity verification
+ * RESPONSIBILITY: JWT authentication, identity verification, and scope attachment
  * 
  * This module handles WHO is making a request (identity).
  * Role-based access control is handled by the RBAC middleware.
+ * Scope and purpose enforcement is handled by the scope middleware.
  * 
  * MUST:
  * - Verify JWT tokens on protected routes
  * - Verify user exists and is active
  * - Attach user identity and role to request
+ * - Attach IMMUTABLE scope metadata to request
  * - Normalize roles (handle legacy role names)
  * - Explicitly reject forbidden roles (super-admin, etc.)
  * 
@@ -28,6 +30,7 @@ import {
  * - Allow access without valid JWT
  * - Allow access with forbidden roles
  * - Allow role combination or escalation
+ * - Allow scope escalation via request
  * - Expose user passwords or hashes
  * - Allow default, fallback, or implicit roles
  */
@@ -71,9 +74,20 @@ export async function authPlugin(fastify) {
       }
 
       // Verify user exists and is active in database
+      // Also load scope assignment (IMMUTABLE - cannot be changed via request)
       const db = getDB();
       const userResult = await db.query(
-        'SELECT id, username, role, is_active FROM users WHERE id = $1',
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.role, 
+          u.is_active,
+          usa.functional_scope,
+          usa.geographic_level,
+          usa.geographic_code
+        FROM users u
+        LEFT JOIN user_scope_assignments usa ON u.id = usa.user_id
+        WHERE u.id = $1`,
         [request.user.id]
       );
 
@@ -102,11 +116,33 @@ export async function authPlugin(fastify) {
         return reply.code(403).send(AUTH_ERRORS.INVALID_ROLE);
       }
 
-      // Attach verified user to request
+      // Load additional scope codes if user has scope assignment
+      let additionalCodes = [];
+      if (dbUser.functional_scope) {
+        const additionalResult = await db.query(
+          `SELECT geographic_level, geographic_code 
+           FROM user_additional_scopes 
+           WHERE user_id = $1`,
+          [dbUser.id]
+        );
+        additionalCodes = additionalResult.rows.map(r => r.geographic_code);
+      }
+
+      // Attach verified user to request with IMMUTABLE scope metadata
+      // Scope is loaded from database and CANNOT be modified via request
       request.user = Object.freeze({
         id: dbUser.id,
         username: dbUser.username,
         role: normalizedRole,
+        // Immutable scope metadata - cannot be escalated
+        scope: Object.freeze({
+          functional: dbUser.functional_scope || null,
+          geographic: dbUser.geographic_level ? Object.freeze({
+            level: dbUser.geographic_level,
+            code: dbUser.geographic_code,
+            codes: Object.freeze(additionalCodes),
+          }) : null,
+        }),
       });
 
       // Update last login (non-blocking)
