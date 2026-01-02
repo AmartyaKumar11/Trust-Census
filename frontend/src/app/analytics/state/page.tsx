@@ -93,9 +93,12 @@ function StateAnalyticsContent() {
             try {
                 setIsLoading(true);
                 setError(null);
+                console.log('[Analytics] Fetching data for state:', stateCode);
                 const response = await getStateAggregates(stateCode);
+                console.log('[Analytics] API Response:', response);
                 setData(response);
             } catch (err) {
+                console.error('[Analytics] API Error:', err);
                 if (err instanceof ApiError) {
                     setError(err.message);
                 } else {
@@ -109,20 +112,38 @@ function StateAnalyticsContent() {
         fetchData();
     }, [stateCode]);
 
-    // Mock data for demonstration
-    const mockData = {
-        stateCode: stateCode || 'MH',
-        stateName: 'Maharashtra',
-        windowId: '2024-Q4',
-        composition: [
-            { category: 'SC', percentage: 16 },
-            { category: 'ST', percentage: 9 },
-            { category: 'OBC', percentage: 42 },
-            { category: 'GENERAL', percentage: 28 },
-            { category: 'OTHER', percentage: 5 },
-        ],
-        generatedAt: new Date().toISOString(),
+    // Transform API response to display format
+    const getDisplayData = () => {
+        if (!data || !data.aggregates || data.aggregates.length === 0) {
+            return null;
+        }
+
+        // Group by caste category and sum populations
+        const categoryMap = new Map<string, number>();
+        data.aggregates.forEach(agg => {
+            const existing = categoryMap.get(agg.category) || 0;
+            categoryMap.set(agg.category, existing + agg.populationEstimate);
+        });
+
+        // Calculate total for percentages
+        const total = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
+
+        // Convert to composition array
+        const composition = Array.from(categoryMap.entries()).map(([category, population]) => ({
+            category,
+            percentage: total > 0 ? (population / total) * 100 : 0,
+        }));
+
+        return {
+            stateCode: data.stateCode,
+            stateName: data.stateName,
+            windowId: data.windowId,
+            composition,
+            generatedAt: data.generatedAt,
+        };
     };
+
+    const displayData = getDisplayData();
 
     return (
         <div className="min-h-screen bg-[var(--color-cream-50)]">
@@ -131,7 +152,7 @@ function StateAnalyticsContent() {
             <div className="py-12 md:py-20">
                 <div className="container-wide">
                     <AnalyticsHeader
-                        title={`${mockData.stateName} - State Analytics`}
+                        title={`${displayData?.stateName || 'State'} - State Analytics (Live Data)`}
                         subtitle="State-level policy-grade estimates for welfare planning and resource allocation. District and sub-state data is not accessible."
                     />
 
@@ -162,11 +183,11 @@ function StateAnalyticsContent() {
                         </Disclaimer>
                     )}
 
-                    {!isLoading && !error && stateCode && (
+                    {!isLoading && !error && stateCode && displayData && (
                         <div className="space-y-12">
                             {/* State Summary Visualization */}
                             <section>
-                                <StateSummaryVisualization data={mockData} />
+                                <StateSummaryVisualization data={displayData} />
                             </section>
 
                             {/* Interpretation Notes */}
@@ -178,7 +199,7 @@ function StateAnalyticsContent() {
                             <Disclaimer variant="info">
                                 <p>
                                     <strong>Scope Restriction:</strong> As a State Analyst, you can only view data
-                                    for {mockData.stateName}. Cross-state comparisons and national-level views are
+                                    for {displayData.stateName}. Cross-state comparisons and national-level views are
                                     available only to Central Policy Viewer role.
                                 </p>
                             </Disclaimer>
@@ -192,6 +213,15 @@ function StateAnalyticsContent() {
                                 </p>
                             </Disclaimer>
                         </div>
+                    )}
+
+                    {!isLoading && !error && stateCode && !displayData && (
+                        <Disclaimer variant="info" className="mb-8">
+                            <p><strong>No Data Available:</strong> No analytics data is available for your state yet.</p>
+                            <p className="mt-2 text-sm">
+                                Analytics aggregation may not have been run for {stateCode}. Contact your system administrator.
+                            </p>
+                        </Disclaimer>
                     )}
                 </div>
             </div>

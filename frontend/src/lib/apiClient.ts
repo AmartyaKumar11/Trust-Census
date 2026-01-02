@@ -84,7 +84,7 @@ export interface GeographicScope {
 }
 
 /** User roles enum */
-export type UserRole = 
+export type UserRole =
   | 'CITIZEN'
   | 'ENUMERATOR'
   | 'SUPERVISOR'
@@ -324,7 +324,7 @@ function validateParams(
 ): Record<string, unknown> {
   const endpoint = ALLOWED_ENDPOINTS[endpointKey];
   const allowedParams = new Set(endpoint.allowedParams);
-  
+
   if (!params) {
     if (allowedParams.size > 0) {
       // Some endpoints may have optional params, so empty is OK
@@ -334,7 +334,7 @@ function validateParams(
   }
 
   const validatedParams: Record<string, unknown> = {};
-  
+
   for (const [key, value] of Object.entries(params)) {
     if (!allowedParams.has(key)) {
       throw new GuardrailViolationError(
@@ -360,7 +360,7 @@ function validateResponse(data: unknown): void {
   if (data === null || data === undefined) {
     throw new ApiError('Empty response from server', 0, false);
   }
-  
+
   if (typeof data !== 'object') {
     throw new ApiError('Invalid response format', 0, false);
   }
@@ -528,7 +528,7 @@ export async function verifySubmissionReceipt(receiptId: string): Promise<Submis
   }
 
   const url = `${API_BASE_URL}/submissions/receipt/${encodeURIComponent(receiptId)}`;
-  
+
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -560,7 +560,49 @@ export async function verifySubmissionReceipt(receiptId: string): Promise<Submis
  * Get state-level aggregates.
  */
 export async function getStateAggregates(stateCode: string, windowId?: string): Promise<AnalyticsStateResponse> {
-  return apiRequest('analytics.stateAggregates', { stateCode, windowId });
+  const response: any = await apiRequest('analytics.stateAggregates', { stateCode, windowId });
+
+  // Transform backend response to frontend format
+  // Backend returns: {disclaimer, data: [{caste_category, noisy_population, geographic_code, ...}], count}
+  // Frontend expects: {stateCode, stateName, windowId, aggregates: [{category, populationEstimate, ...}], ...}
+
+  if (!response.data || response.data.length === 0) {
+    throw new ApiError('No data available for this state', 404);
+  }
+
+  const firstRecord = response.data[0];
+  const stateCodeFromData = firstRecord.geographic_code;
+
+  // Map state codes to names
+  const stateNames: Record<string, string> = {
+    'MH': 'Maharashtra',
+    'KA': 'Karnataka',
+    'TN': 'Tamil Nadu',
+    'DL': 'Delhi',
+    'UP': 'Uttar Pradesh',
+    'WB': 'West Bengal',
+    'GJ': 'Gujarat',
+    'RJ': 'Rajasthan',
+    'AP': 'Andhra Pradesh',
+    'TG': 'Telangana',
+  };
+
+  // Transform aggregates
+  const aggregates: AggregateData[] = response.data.map((item: any) => ({
+    category: item.caste_category,
+    populationEstimate: item.noisy_population || 0,
+    submissionCount: item.noisy_submission_count || 0,
+    privacyDisclaimer: response.disclaimer?.notice || 'Privacy-protected estimate',
+  }));
+
+  return {
+    stateCode: stateCodeFromData,
+    stateName: stateNames[stateCodeFromData] || stateCodeFromData,
+    windowId: firstRecord.aggregation_window_id || windowId || 'current',
+    aggregates,
+    generatedAt: firstRecord.computed_at || new Date().toISOString(),
+    privacyNotice: response.disclaimer?.notice || 'Values are privacy-preserving estimates with differential privacy noise applied.',
+  };
 }
 
 /**
