@@ -184,8 +184,10 @@ export default function LoginPage() {
               This is a demonstration system. For testing, use these credentials:
             </p>
             <div className="font-mono text-xs bg-white/50 rounded p-2 space-y-1">
-              <p><strong>Enumerator:</strong> test_enumerator / TestPass123!</p>
-              <p><strong>Analyst:</strong> test_analyst / TestPass123!</p>
+              <p><strong>Enumerator:</strong> test_enumerator / DemoEnum2024!</p>
+              <p><strong>Supervisor:</strong> test_supervisor / DemoSuper2024!</p>
+              <p><strong>Analyst:</strong> test_analyst / DemoAnalyst2024!</p>
+              <p><strong>Policy Viewer:</strong> test_policy_viewer / DemoPolicy2024!</p>
             </div>
           </Disclaimer>
         </div>

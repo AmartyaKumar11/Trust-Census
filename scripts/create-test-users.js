@@ -32,10 +32,29 @@ function generateTestPassword() {
   return `test_${crypto.randomBytes(8).toString('hex')}`;
 }
 
+// Fixed demo passwords for demo environment
+// In production, use generateTestPassword() instead
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+const DEMO_PASSWORDS = {
+  test_enumerator: 'DemoEnum2024!',
+  test_supervisor: 'DemoSuper2024!',
+  test_analyst: 'DemoAnalyst2024!',
+  test_analyst_other: 'DemoAnalyst2024!',
+  test_policy_viewer: 'DemoPolicy2024!',
+  test_citizen: 'DemoCitizen2024!',
+};
+
+function getPassword(username) {
+  if (DEMO_MODE && DEMO_PASSWORDS[username]) {
+    return DEMO_PASSWORDS[username];
+  }
+  return generateTestPassword();
+}
+
 const TEST_USERS = [
   {
     username: 'test_enumerator',
-    password: generateTestPassword(),
+    password: getPassword('test_enumerator'),
     role: 'ENUMERATOR',
     scope: {
       functional: 'SUBMISSION',
@@ -48,7 +67,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_supervisor',
-    password: generateTestPassword(),
+    password: getPassword('test_supervisor'),
     role: 'SUPERVISOR',
     scope: {
       functional: 'OVERSIGHT',
@@ -61,7 +80,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_analyst',
-    password: generateTestPassword(),
+    password: getPassword('test_analyst'),
     role: 'STATE_ANALYST',
     scope: {
       functional: 'ANALYSIS',
@@ -74,7 +93,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_analyst_other',
-    password: generateTestPassword(),
+    password: getPassword('test_analyst_other'),
     role: 'STATE_ANALYST',
     scope: {
       functional: 'ANALYSIS',
@@ -87,7 +106,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_policy_viewer',
-    password: generateTestPassword(),
+    password: getPassword('test_policy_viewer'),
     role: 'CENTRAL_POLICY_VIEWER',
     scope: {
       functional: 'POLICY_VIEW',
@@ -100,7 +119,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_citizen',
-    password: generateTestPassword(),
+    password: getPassword('test_citizen'),
     role: 'CITIZEN',
     scope: {
       functional: 'CONSENT',

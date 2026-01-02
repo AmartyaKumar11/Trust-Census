@@ -197,7 +197,7 @@ const start = async () => {
     console.log('     ✓ Aggregation workers NOT loaded in API process');
     console.log('');
     
-    const port = parseInt(process.env.PORT || '3000');
+    const port = parseInt(process.env.PORT || '3001');
     const host = process.env.HOST || '0.0.0.0';
     
     await fastify.listen({ port, host });
