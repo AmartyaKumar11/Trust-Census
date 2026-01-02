@@ -90,11 +90,11 @@ export async function submissionRoutes(fastify) {
           stateCode: { type: 'string', pattern: '^[A-Z]{2}$' },
           districtCode: { type: 'string', pattern: '^[0-9]{4}$' },
           blockCode: { type: 'string', pattern: '^[0-9]{6}$' },
-          villageCode: { type: 'string', pattern: '^[0-9]{10}$' },
+          villageCode: { type: 'string', maxLength: 200 }, // Free-text village/ward name
           // Census data
           householdCount: { type: 'integer', minimum: 0 },
           populationCount: { type: 'integer', minimum: 0 },
-          casteCategory: { 
+          casteCategory: {
             type: 'string',
             enum: ['SC', 'ST', 'OBC', 'GENERAL', 'OTHER']
           },
@@ -183,7 +183,7 @@ export async function submissionRoutes(fastify) {
 
     // STEP 4: Atomic write - submission + consent link in single transaction
     const client = await db.connect();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -254,7 +254,7 @@ export async function submissionRoutes(fastify) {
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Submission transaction failed:', error.message);
-      
+
       // Log failure (WITHOUT raw content)
       await logAuditEvent({
         timestamp: new Date().toISOString(),
@@ -383,7 +383,7 @@ export async function submissionRoutes(fastify) {
     });
 
     if (result.rows.length === 0) {
-      return reply.code(404).send({ 
+      return reply.code(404).send({
         exists: false,
         message: 'Receipt not found'
       });

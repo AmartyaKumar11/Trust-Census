@@ -32,7 +32,7 @@ const geographicCodeSchema = z.object({
   stateCode: z.string().length(2).regex(/^[A-Z]{2}$/),
   districtCode: z.string().length(4).regex(/^[0-9]{4}$/),
   blockCode: z.string().length(6).regex(/^[0-9]{6}$/),
-  villageCode: z.string().length(10).regex(/^[0-9]{10}$/).optional(),
+  villageCode: z.string().max(200).optional(), // Free-text village/ward name for reference
 });
 
 // Census submission schema
@@ -42,7 +42,7 @@ export const censusSubmissionSchema = z.object({
   stateCode: z.string().length(2).regex(/^[A-Z]{2}$/),
   districtCode: z.string().length(4).regex(/^[0-9]{4}$/),
   blockCode: z.string().length(6).regex(/^[0-9]{6}$/),
-  villageCode: z.string().length(10).regex(/^[0-9]{10}$/).optional(),
+  villageCode: z.string().max(200).optional(), // Free-text village/ward name for reference
   
   // Census data
   householdCount: z.number().int().min(0).max(1000000),

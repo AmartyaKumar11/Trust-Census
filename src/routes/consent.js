@@ -65,7 +65,7 @@ export async function consentRoutes(fastify) {
           stateCode: { type: 'string', pattern: '^[A-Z]{2}$' },
           districtCode: { type: 'string', pattern: '^[0-9]{4}$' },
           blockCode: { type: 'string', pattern: '^[0-9]{6}$' },
-          villageCode: { type: 'string', pattern: '^[0-9]{10}$' }
+          villageCode: { type: 'string', maxLength: 200 } // Free-text village/ward name
           // NOTE: NO caste data, NO personal identifiers
         }
       }
@@ -73,15 +73,15 @@ export async function consentRoutes(fastify) {
   }, async (request, reply) => {
     const { consentTextVersion, stateCode, districtCode, blockCode, villageCode } = request.body;
     const userRole = request.user.role;
-    
+
     // Determine who is giving consent
-    const givenByRole = (userRole === 'CITIZEN') 
-      ? ConsentGivenByRole.CITIZEN 
+    const givenByRole = (userRole === 'CITIZEN')
+      ? ConsentGivenByRole.CITIZEN
       : ConsentGivenByRole.ENUMERATOR;
-    
+
     // Enumerator ID (if applicable)
-    const enumeratorId = (givenByRole === ConsentGivenByRole.ENUMERATOR) 
-      ? request.user.id 
+    const enumeratorId = (givenByRole === ConsentGivenByRole.ENUMERATOR)
+      ? request.user.id
       : null;
 
     try {
@@ -146,7 +146,7 @@ export async function consentRoutes(fastify) {
         }
       });
 
-      return reply.code(500).send({ 
+      return reply.code(500).send({
         error: 'Failed to capture consent',
         code: ConsentError.CONSENT_CREATION_FAILED
       });
@@ -196,7 +196,7 @@ export async function consentRoutes(fastify) {
     });
 
     if (!exists) {
-      return reply.code(404).send({ 
+      return reply.code(404).send({
         error: 'Consent not found',
         code: ConsentError.CONSENT_NOT_FOUND
       });
@@ -252,7 +252,7 @@ export async function consentRoutes(fastify) {
     });
 
     if (!status) {
-      return reply.code(404).send({ 
+      return reply.code(404).send({
         error: 'Consent not found',
         code: ConsentError.CONSENT_NOT_FOUND
       });
@@ -285,7 +285,7 @@ export async function consentRoutes(fastify) {
     }
   }, async (request, reply) => {
     const { stateCode, districtCode } = request.query;
-    
+
     // Import getDB here to avoid circular dependency
     const { getDB } = await import('../db/connection.js');
     const db = getDB();
@@ -305,12 +305,12 @@ export async function consentRoutes(fastify) {
         WHERE 1=1
       `;
       const params = [];
-      
+
       if (stateCode) {
         params.push(stateCode);
         query += ` AND state_code = $${params.length}`;
       }
-      
+
       if (districtCode) {
         params.push(districtCode);
         query += ` AND district_code = $${params.length}`;
@@ -370,7 +370,7 @@ export async function consentRoutes(fastify) {
           stateCode: { type: 'string', pattern: '^[A-Z]{2}$' },
           districtCode: { type: 'string', pattern: '^[0-9]{4}$' },
           blockCode: { type: 'string', pattern: '^[0-9]{6}$' },
-          villageCode: { type: 'string', pattern: '^[0-9]{10}$' }
+          villageCode: { type: 'string', maxLength: 200 } // Free-text village/ward name
         }
       }
     }
@@ -413,7 +413,7 @@ export async function consentRoutes(fastify) {
 
     } catch (error) {
       console.error('Citizen consent failed:', error);
-      return reply.code(500).send({ 
+      return reply.code(500).send({
         error: 'Failed to provide consent',
         code: ConsentError.CONSENT_CREATION_FAILED
       });
