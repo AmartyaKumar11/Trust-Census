@@ -36,7 +36,7 @@ export async function authRoutes(fastify) {
         properties: {
           username: { type: 'string', minLength: 3, maxLength: 100 },
           password: { type: 'string', minLength: 12 },
-          role: { 
+          role: {
             type: 'string',
             enum: ['DATA_ENTRY', 'AUDITOR', 'ANALYST']
           }
@@ -164,6 +164,23 @@ export async function authRoutes(fastify) {
       return reply.code(401).send({ error: 'Invalid credentials' });
     }
 
+    // Fetch geographic scope
+    const scopeResult = await db.query(
+      'SELECT geographic_level, geographic_code FROM user_scopes WHERE user_id = $1',
+      [user.id]
+    );
+
+    let geographicScope = null;
+    if (scopeResult.rows.length > 0) {
+      const scope = scopeResult.rows[0];
+      geographicScope = {
+        stateCode: scope.geographic_level === 'STATE' || scope.geographic_level === 'NATIONAL' ? scope.geographic_code : null,
+        districtCode: scope.geographic_level === 'DISTRICT' ? scope.geographic_code : null,
+        blockCode: scope.geographic_level === 'BLOCK' ? scope.geographic_code : null,
+        villageCode: scope.geographic_level === 'VILLAGE' ? scope.geographic_code : null,
+      };
+    }
+
     // Generate JWT token
     const token = fastify.jwt.sign({
       id: user.id,
@@ -190,7 +207,8 @@ export async function authRoutes(fastify) {
       user: {
         id: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        geographicScope
       }
     });
   });
