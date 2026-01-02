@@ -38,6 +38,7 @@ export const AuditActionCategory = Object.freeze({
   SUBMISSION_VERIFY: 'SUBMISSION_VERIFY',
   AGGREGATE_COMPUTE: 'AGGREGATE_COMPUTE',
   AGGREGATE_READ: 'AGGREGATE_READ',
+  ANALYTICS_ACCESS: 'ANALYTICS_ACCESS', // L3 read-only access
   AUDIT_READ: 'AUDIT_READ',
   CONSENT_OPERATION: 'CONSENT_OPERATION',
   SYSTEM_HEALTH: 'SYSTEM_HEALTH',
@@ -51,6 +52,7 @@ export const AuditActionCategory = Object.freeze({
  */
 export const AuditOutcome = Object.freeze({
   ALLOWED: 'ALLOWED',
+  SUCCESS: 'SUCCESS', // Alias for ALLOWED
   DENIED: 'DENIED',
   ERROR: 'ERROR',
 });

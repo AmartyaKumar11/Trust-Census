@@ -129,6 +129,7 @@ export const SCOPE_ALLOWED_PURPOSES = Object.freeze({
   [FunctionalScope.ANALYSIS]: [
     PurposeCategory.AGGREGATE_COMPUTE,
     PurposeCategory.AGGREGATE_READ,
+    PurposeCategory.POLICY_READ, // StateAnalyst can read L3 for their assigned state
     PurposeCategory.AUTHENTICATION,
   ],
   [FunctionalScope.POLICY_VIEW]: [

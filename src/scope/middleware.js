@@ -64,6 +64,13 @@ const ROUTE_PURPOSE_MAP = Object.freeze({
   'GET:/policy/aggregates': PurposeCategory.POLICY_READ,
   'GET:/policy/aggregates/:id': PurposeCategory.POLICY_READ,
   
+  // Analytics routes (L3 read-only)
+  'GET:/analytics/aggregates/state': PurposeCategory.POLICY_READ,
+  'GET:/analytics/aggregates/national': PurposeCategory.POLICY_READ,
+  'GET:/analytics/aggregates/:id': PurposeCategory.POLICY_READ,
+  'GET:/analytics/aggregates/:id/verify': PurposeCategory.POLICY_READ,
+  'GET:/analytics/windows': PurposeCategory.POLICY_READ,
+  
   // Audit routes
   'GET:/audit/logs': PurposeCategory.AUDIT_READ,
   'GET:/audit/logs/:id': PurposeCategory.AUDIT_READ,
