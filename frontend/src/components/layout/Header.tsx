@@ -5,16 +5,63 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
+import { useAuth, getRoleDisplayName, type UserRole } from '@/lib/authContext';
 
-const navigation = [
+/** Navigation items with role-based visibility */
+interface NavItem {
+  name: string;
+  href: string;
+  /** If specified, only show for these roles. If empty/undefined, show for all. */
+  allowedRoles?: UserRole[];
+  /** If true, only show when authenticated */
+  requiresAuth?: boolean;
+  /** If true, only show when NOT authenticated */
+  hideWhenAuth?: boolean;
+}
+
+const navigation: NavItem[] = [
   { name: 'Home', href: '/' },
   { name: 'Principles', href: '/principles' },
   { name: 'Architecture', href: '/architecture' },
+  { 
+    name: 'Submit', 
+    href: '/submit', 
+    requiresAuth: true,
+    allowedRoles: ['ENUMERATOR', 'SUPERVISOR'],
+  },
+  { 
+    name: 'Analytics', 
+    href: '/analytics', 
+    requiresAuth: true,
+    allowedRoles: ['STATE_ANALYST', 'CENTRAL_POLICY_VIEWER'],
+  },
+  { 
+    name: 'System Status', 
+    href: '/system-status',
+  },
 ];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { isAuthenticated, user, logout, hasRole } = useAuth();
+
+  /** Filter navigation items based on auth state and role */
+  const visibleNavItems = navigation.filter((item) => {
+    // Hide items that require auth when not authenticated
+    if (item.requiresAuth && !isAuthenticated) return false;
+    
+    // Hide items that should be hidden when authenticated
+    if (item.hideWhenAuth && isAuthenticated) return false;
+    
+    // Check role-based visibility
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      if (!isAuthenticated) return false;
+      if (!hasRole(...item.allowedRoles)) return false;
+    }
+    
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-[var(--color-cream-200)]">
@@ -51,7 +98,7 @@ export function Header() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-6">
-              {navigation.map((item) => (
+              {visibleNavItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
@@ -66,12 +113,32 @@ export function Header() {
                 </Link>
               ))}
             </div>
+            
+            {/* Auth Section */}
             <div className="flex items-center gap-3">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
+              {isAuthenticated && user ? (
+                <div className="flex items-center gap-3">
+                  {/* User Info */}
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-[var(--color-navy-800)]">
+                      {user.username}
+                    </p>
+                    <p className="text-xs text-[var(--color-charcoal-500)]">
+                      {getRoleDisplayName(user.role)}
+                    </p>
+                  </div>
+                  {/* Sign Out Button */}
+                  <Button variant="ghost" size="sm" onClick={logout}>
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -105,8 +172,20 @@ export function Header() {
             className="md:hidden py-4 border-t border-[var(--color-cream-200)]"
             style={{ animation: 'fade-in 0.3s ease-in-out' }}
           >
+            {/* User Info (if authenticated) */}
+            {isAuthenticated && user && (
+              <div className="px-4 py-3 mb-2 bg-[var(--color-cream-50)] rounded-lg">
+                <p className="text-sm font-medium text-[var(--color-navy-800)]">
+                  {user.username}
+                </p>
+                <p className="text-xs text-[var(--color-charcoal-500)]">
+                  {getRoleDisplayName(user.role)}
+                </p>
+              </div>
+            )}
+            
             <div className="flex flex-col gap-2">
-              {navigation.map((item) => (
+              {visibleNavItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
@@ -121,12 +200,27 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Auth Actions */}
               <div className="pt-4 mt-2 border-t border-[var(--color-cream-200)]">
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="primary" className="w-full">
-                    Sign In
+                {isAuthenticated ? (
+                  <Button 
+                    variant="secondary" 
+                    className="w-full"
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Sign Out
                   </Button>
-                </Link>
+                ) : (
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="primary" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

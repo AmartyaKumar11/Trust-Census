@@ -1,23 +1,83 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Disclaimer } from '@/components/ui';
+import { useAuth, getRoleDisplayName } from '@/lib/authContext';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const router = useRouter();
+  const { login, logout, isLoading, error, clearError, isAuthenticated, user } = useAuth();
+  
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Clear error when inputs change
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, [username, password]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // If already authenticated, show logged-in state (no auto-redirect to prevent loops)
+  if (isAuthenticated && user) {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <Card variant="elevated">
+            <CardContent className="text-center py-8">
+              <div className="w-16 h-16 bg-[var(--color-status-success)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-[var(--color-status-success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-serif font-bold text-[var(--color-navy-800)] mb-2">
+                Signed In
+              </h2>
+              <p className="text-[var(--color-charcoal-600)] mb-4">
+                Welcome, <strong>{user.username}</strong>
+              </p>
+              <div className="bg-[var(--color-cream-50)] rounded-lg p-3 mb-6">
+                <p className="text-sm text-[var(--color-charcoal-500)]">Role</p>
+                <p className="font-medium text-[var(--color-navy-700)]">
+                  {getRoleDisplayName(user.role)}
+                </p>
+              </div>
+              <div className="space-y-3">
+                <Link href="/">
+                  <Button variant="primary" className="w-full">
+                    Go to Home
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={logout}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    
+    if (!username.trim() || !password.trim()) {
+      return;
+    }
 
-    // TODO: Integrate with backend authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      setError('Backend integration pending. This is a UI demonstration.');
-    }, 1500);
+    const success = await login(username, password);
+    
+    if (success) {
+      // Successfully logged in - user can navigate manually
+      // No auto-redirect to prevent loops
+    }
   };
 
   return (
@@ -60,6 +120,9 @@ export default function LoginPage() {
                 autoComplete="username"
                 required
                 placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isLoading}
               />
 
               <Input
@@ -69,6 +132,9 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
                 placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
 
               {error && (
@@ -82,6 +148,7 @@ export default function LoginPage() {
                 className="w-full"
                 size="lg"
                 isLoading={isLoading}
+                disabled={!username.trim() || !password.trim()}
               >
                 Sign In
               </Button>
@@ -127,8 +194,8 @@ export default function LoginPage() {
         <div className="mt-4">
           <Disclaimer variant="privacy" title="Security Notice">
             <p>
-              All login attempts are audited. Unauthorized access attempts 
-              are logged and may be reported to authorities.
+              All login attempts are audited. Your session will end when you 
+              close the browser or refresh the page. This is intentional for security.
             </p>
           </Disclaimer>
         </div>

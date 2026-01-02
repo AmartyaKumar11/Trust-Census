@@ -63,10 +63,16 @@ export {
   AuthProvider,
   useAuth,
   RequireAuth,
+  ShowForRoles,
+  getRoleDisplayName,
+  ROLE_DISPLAY_NAMES,
   type User,
   type AuthState,
   type AuthContextValue,
   type AuthProviderProps,
   type RequireAuthProps,
+  type ShowForRolesProps,
+  type UserRole,
+  type GeographicScope,
 } from './authContext';
 

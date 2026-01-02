@@ -75,12 +75,29 @@ export interface LoginParams {
   password: string;
 }
 
+/** Geographic scope - immutable after login */
+export interface GeographicScope {
+  stateCode: string | null;
+  districtCode: string | null;
+  blockCode: string | null;
+  villageCode: string | null;
+}
+
+/** User roles enum */
+export type UserRole = 
+  | 'CITIZEN'
+  | 'ENUMERATOR'
+  | 'SUPERVISOR'
+  | 'STATE_ANALYST'
+  | 'CENTRAL_POLICY_VIEWER';
+
 export interface LoginResponse {
   token: string;
   user: {
     id: string;
     username: string;
-    role: string;
+    role: UserRole;
+    geographicScope?: GeographicScope;
   };
 }
 

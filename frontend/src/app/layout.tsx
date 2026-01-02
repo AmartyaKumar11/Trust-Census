@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Header, Footer, OfflineIndicator } from '@/components/layout';
+import { AuthProviderWrapper } from '@/components/providers';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -60,10 +61,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <OfflineIndicator />
+        <AuthProviderWrapper>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <OfflineIndicator />
+        </AuthProviderWrapper>
         <ServiceWorkerRegistration />
       </body>
     </html>
