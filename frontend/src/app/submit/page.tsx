@@ -924,17 +924,21 @@ function SubmissionStep({
             </p>
           </div>
 
-          <Input
-            label="Village Code"
-            type="text"
-            placeholder="e.g., 0101010001"
-            pattern="[0-9]{10}"
-            hint="10-digit village code"
-            required
-            value={form.villageCode}
-            onChange={(e) => setForm(prev => ({ ...prev, villageCode: e.target.value }))}
-            disabled={isLoading}
-          />
+          <div>
+            <Input
+              label="Village / Ward (Local Name)"
+              type="text"
+              placeholder="e.g., Wagholi, Andheri East, Ward 12"
+              hint="Local village or ward name for reference only."
+              required
+              value={form.villageCode}
+              onChange={(e) => setForm(prev => ({ ...prev, villageCode: e.target.value }))}
+              disabled={isLoading}
+            />
+            <p className="mt-1 text-xs text-[var(--color-charcoal-500)]">
+              Village or ward names are not published and are not used for policy analysis.
+            </p>
+          </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <Input
