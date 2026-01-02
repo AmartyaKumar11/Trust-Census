@@ -213,7 +213,7 @@ export async function analyticsRoutes(fastify) {
       return fastify.analyticsPool;
     }
     // Fallback to main pool if analytics pool not configured
-    return fastify.pg;
+    return fastify.db;
   };
 
   /**

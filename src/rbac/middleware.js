@@ -97,8 +97,8 @@ export function requireRoles(...allowedRoles) {
       return reply.code(403).send(ACCESS_DENIED_RESPONSE);
     }
 
-    // Update request with normalized role
-    request.user.role = normalizedRole;
+    // Store normalized role in request for downstream use (don't modify frozen user object)
+    request.normalizedRole = normalizedRole;
 
     // Access granted - continue to next handler
   };

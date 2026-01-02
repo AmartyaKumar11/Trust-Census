@@ -58,14 +58,25 @@ export function generateWindowId(startTime, endTime) {
 
 /**
  * Calculate time window for processing
- * Returns start and end timestamps for the previous day
+ * Returns start and end timestamps for the configured lookback period
+ * 
+ * In production: processes previous day's data only
+ * For testing: can include current day via environment variable
  * 
  * @returns {object} - { startTime, endTime, windowId }
  */
 export function calculateTimeWindow() {
   const now = new Date();
   const endTime = new Date(now);
-  endTime.setHours(0, 0, 0, 0); // Start of today = end of yesterday
+  
+  // For testing: include current day if AGGREGATION_INCLUDE_TODAY is set
+  if (process.env.AGGREGATION_INCLUDE_TODAY === 'true') {
+    // End time is now (include today's data)
+    endTime.setHours(23, 59, 59, 999);
+  } else {
+    // Production: end at start of today (exclude today's data)
+    endTime.setHours(0, 0, 0, 0);
+  }
 
   const startTime = new Date(endTime);
   startTime.setHours(startTime.getHours() - MICRO_AGGREGATION_CONFIG.TIME_WINDOW.LOOKBACK_HOURS);

@@ -52,6 +52,9 @@ export const censusSubmissionSchema = z.object({
   casteCategory: z.enum([
     'SC', 'ST', 'OBC', 'GENERAL', 'OTHER'
   ]),
+  
+  // Consent receipt ID - required for all submissions
+  consentReceiptId: z.string().uuid(),
 }).refine((data) => {
   // Additional validation: population should be >= household count
   return data.populationCount >= data.householdCount;

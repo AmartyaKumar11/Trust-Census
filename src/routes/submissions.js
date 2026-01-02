@@ -76,7 +76,7 @@ export async function submissionRoutes(fastify) {
   fastify.post('/submissions', {
     preHandler: [
       fastify.authenticate,
-      fastify.requireRole('DATA_ENTRY'),
+      fastify.requireRole('DATA_ENTRY', 'ENUMERATOR'),
       validate(censusSubmissionSchema)
     ],
     schema: {
@@ -325,7 +325,7 @@ export async function submissionRoutes(fastify) {
   fastify.get('/submissions/receipt/:receiptId', {
     preHandler: [
       fastify.authenticate,
-      fastify.requireRole('DATA_ENTRY', 'AUDITOR', 'SUPERVISOR')
+      fastify.requireRole('DATA_ENTRY', 'ENUMERATOR', 'AUDITOR', 'SUPERVISOR')
     ],
     schema: {
       description: 'Verify submission receipt exists (NO data access)',

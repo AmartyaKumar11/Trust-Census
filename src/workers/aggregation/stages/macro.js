@@ -58,15 +58,26 @@ export function generateWindowId(startTime, endTime) {
 
 /**
  * Calculate time window for processing
- * Returns start and end timestamps for the previous week
+ * Returns start and end timestamps for the configured lookback period
+ * 
+ * In production: processes previous week's L2 data only
+ * For testing: can include current week via environment variable
  * 
  * @returns {object} - { startTime, endTime, windowId }
  */
 export function calculateTimeWindow() {
   const now = new Date();
   const endTime = new Date(now);
-  endTime.setHours(0, 0, 0, 0);
-  endTime.setDate(endTime.getDate() - endTime.getDay()); // Start of this week = end of last week
+  
+  // For testing: include current week if AGGREGATION_INCLUDE_TODAY is set
+  if (process.env.AGGREGATION_INCLUDE_TODAY === 'true') {
+    // End time is now (include this week's data)
+    endTime.setHours(23, 59, 59, 999);
+  } else {
+    // Production: end at start of this week (exclude this week's data)
+    endTime.setHours(0, 0, 0, 0);
+    endTime.setDate(endTime.getDate() - endTime.getDay());
+  }
 
   const startTime = new Date(endTime);
   startTime.setDate(startTime.getDate() - MACRO_AGGREGATION_CONFIG.TIME_WINDOW.LOOKBACK_DAYS);

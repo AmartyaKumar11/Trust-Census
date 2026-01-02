@@ -148,8 +148,8 @@ function createAggregationWorkerPool() {
   const pool = new Pool({
     user: process.env.DB_AGGREGATION_WORKER_USER || DATABASE_CONFIG.ROLE,
     password: process.env.DB_AGGREGATION_WORKER_PASSWORD,
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
+    host: process.env.DB_HOST || '127.0.0.1', // Use 127.0.0.1 for Docker on Windows
+    port: parseInt(process.env.DB_PORT || '5433'), // Docker PostgreSQL on port 5433
     database: process.env.DB_NAME || 'trust_census',
     max: DATABASE_CONFIG.POOL.MAX,
     idleTimeoutMillis: DATABASE_CONFIG.POOL.IDLE_TIMEOUT_MS,
