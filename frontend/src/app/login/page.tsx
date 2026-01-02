@@ -88,18 +88,43 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 pt-6 border-t border-[var(--color-cream-200)]">
-              <p className="text-sm text-[var(--color-charcoal-500)] text-center">
-                Don&apos;t have access?{' '}
-                <span className="text-[var(--color-charcoal-700)]">
-                  Contact your designated administrator.
-                </span>
-              </p>
+              <div className="bg-[var(--color-cream-50)] rounded-lg p-4 text-left">
+                <h4 className="font-semibold text-[var(--color-navy-700)] text-sm mb-2">
+                  How do I get access?
+                </h4>
+                <p className="text-sm text-[var(--color-charcoal-600)] mb-2">
+                  This system does not allow self-registration. User accounts are 
+                  provisioned by authorized administrators with specific roles:
+                </p>
+                <ul className="text-xs text-[var(--color-charcoal-500)] space-y-1 mb-3">
+                  <li>• <strong>Enumerator</strong> — Field data collection</li>
+                  <li>• <strong>Supervisor</strong> — Oversight and consent verification</li>
+                  <li>• <strong>State Analyst</strong> — View state-level aggregates</li>
+                  <li>• <strong>Central Policy Viewer</strong> — View national aggregates</li>
+                </ul>
+                <p className="text-sm text-[var(--color-charcoal-600)]">
+                  Contact your designated administrator to request access.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Security Notice */}
+        {/* Demo Notice */}
         <div className="mt-6">
+          <Disclaimer variant="info" title="Demo Environment">
+            <p className="mb-2">
+              This is a demonstration system. For testing, use these credentials:
+            </p>
+            <div className="font-mono text-xs bg-white/50 rounded p-2 space-y-1">
+              <p><strong>Enumerator:</strong> test_enumerator / TestPass123!</p>
+              <p><strong>Analyst:</strong> test_analyst / TestPass123!</p>
+            </div>
+          </Disclaimer>
+        </div>
+
+        {/* Security Notice */}
+        <div className="mt-4">
           <Disclaimer variant="privacy" title="Security Notice">
             <p>
               All login attempts are audited. Unauthorized access attempts 
