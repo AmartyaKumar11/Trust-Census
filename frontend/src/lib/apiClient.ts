@@ -231,7 +231,7 @@ export const ALLOWED_ENDPOINTS = {
   } as EndpointDefinition<SubmissionCreateParams, SubmissionCreateResponse>,
 
   'submissions.verifyReceipt': {
-    path: '/submissions/verify',
+    path: '/submissions/receipt',
     intent: 'READ',
     allowedParams: ['receiptId'],
     description: 'Verify submission receipt exists (no data returned)',
@@ -517,9 +517,43 @@ export async function createSubmission(params: SubmissionCreateParams): Promise<
 
 /**
  * Verify submission receipt.
+ * Note: Uses path parameter, not query parameter.
  */
 export async function verifySubmissionReceipt(receiptId: string): Promise<SubmissionVerifyResponse> {
-  return apiRequest('submissions.verifyReceipt', { receiptId });
+  // The backend uses /submissions/receipt/:receiptId format
+  // We need to make a direct fetch call with the receipt ID in the path
+  const token = authToken;
+  if (!token) {
+    throw new ApiError('Authentication required', 401, false);
+  }
+
+  const url = `${API_BASE_URL}/submissions/receipt/${encodeURIComponent(receiptId)}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { exists: false };
+      }
+      throw new ApiError('Failed to verify receipt', response.status, false);
+    }
+
+    const data = await response.json();
+    return {
+      exists: data.exists,
+      timestamp: data.timestamp,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError('Unable to connect to server', 0, true);
+  }
 }
 
 /**

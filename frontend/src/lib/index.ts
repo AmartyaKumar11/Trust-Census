@@ -76,3 +76,14 @@ export {
   type GeographicScope,
 } from './authContext';
 
+// Offline Storage
+export {
+  savePendingSubmission,
+  getPendingCount,
+  syncPendingSubmissions,
+  clearAllPending,
+  isOfflineStorageAvailable,
+  type PendingSubmission,
+  type SyncResult,
+} from './offlineStorage';
+
