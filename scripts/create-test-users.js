@@ -25,10 +25,17 @@ const __dirname = dirname(__filename);
 // Load environment
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
+import crypto from 'crypto';
+
+// Generate random test passwords (different each run for security)
+function generateTestPassword() {
+  return `test_${crypto.randomBytes(8).toString('hex')}`;
+}
+
 const TEST_USERS = [
   {
     username: 'test_enumerator',
-    password: 'enumerator_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'ENUMERATOR',
     scope: {
       functional: 'SUBMISSION',
@@ -41,7 +48,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_supervisor',
-    password: 'supervisor_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'SUPERVISOR',
     scope: {
       functional: 'OVERSIGHT',
@@ -54,7 +61,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_analyst',
-    password: 'analyst_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'STATE_ANALYST',
     scope: {
       functional: 'ANALYSIS',
@@ -67,7 +74,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_analyst_other',
-    password: 'analyst_other_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'STATE_ANALYST',
     scope: {
       functional: 'ANALYSIS',
@@ -80,7 +87,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_policy_viewer',
-    password: 'policy_viewer_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'CENTRAL_POLICY_VIEWER',
     scope: {
       functional: 'POLICY_VIEW',
@@ -93,7 +100,7 @@ const TEST_USERS = [
   },
   {
     username: 'test_citizen',
-    password: 'citizen_test_pwd_2024',
+    password: generateTestPassword(),
     role: 'CITIZEN',
     scope: {
       functional: 'CONSENT',

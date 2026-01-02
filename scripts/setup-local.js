@@ -33,31 +33,43 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
-// Development credentials (DO NOT USE IN PRODUCTION)
+// Development credentials generator
+// Generates random passwords for local development
+import crypto from 'crypto';
+
+function generatePassword() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function generateJwtSecret() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Development credentials (regenerated each setup)
 const DEV_CONFIG = {
-  DB_HOST: 'localhost',
-  DB_PORT: '5432',
-  DB_NAME: 'trust_census',
-  DB_USER: 'postgres',
-  DB_PASSWORD: 'postgres',
+  DB_HOST: process.env.DB_HOST || 'localhost',
+  DB_PORT: process.env.DB_PORT || '5432',
+  DB_NAME: process.env.DB_NAME || 'trust_census',
+  DB_USER: process.env.DB_USER || 'postgres',
+  DB_PASSWORD: process.env.DB_PASSWORD || 'postgres',
   
-  // Role credentials
+  // Role credentials - generated if not in environment
   DB_API_WRITER_USER: 'api_writer',
-  DB_API_WRITER_PASSWORD: 'api_writer_pwd_2024',
+  DB_API_WRITER_PASSWORD: process.env.DB_API_WRITER_PASSWORD || generatePassword(),
   
   DB_AUDIT_WRITER_USER: 'audit_writer',
-  DB_AUDIT_WRITER_PASSWORD: 'audit_writer_pwd_2024',
+  DB_AUDIT_WRITER_PASSWORD: process.env.DB_AUDIT_WRITER_PASSWORD || generatePassword(),
   
   DB_AGGREGATION_WORKER_USER: 'aggregation_worker',
-  DB_AGGREGATION_WORKER_PASSWORD: 'aggregation_worker_pwd_2024',
+  DB_AGGREGATION_WORKER_PASSWORD: process.env.DB_AGGREGATION_WORKER_PASSWORD || generatePassword(),
   
   DB_ANALYTICS_READER_USER: 'analytics_reader',
-  DB_ANALYTICS_READER_PASSWORD: 'analytics_reader_pwd_2024',
+  DB_ANALYTICS_READER_PASSWORD: process.env.DB_ANALYTICS_READER_PASSWORD || generatePassword(),
   
   DB_SUPERVISOR_READER_USER: 'supervisor_reader',
-  DB_SUPERVISOR_READER_PASSWORD: 'supervisor_reader_pwd_2024',
+  DB_SUPERVISOR_READER_PASSWORD: process.env.DB_SUPERVISOR_READER_PASSWORD || generatePassword(),
   
-  JWT_SECRET: 'trust_census_dev_jwt_secret_min_32_chars_long_2024',
+  JWT_SECRET: process.env.JWT_SECRET || generateJwtSecret(),
   JWT_EXPIRY: '24h',
   PORT: '3000',
   HOST: '0.0.0.0',

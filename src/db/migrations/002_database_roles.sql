@@ -30,10 +30,13 @@
 
 -- Create role for API layer (writes submissions, cannot read them back)
 -- Used by: Enumerator endpoints
+-- NOTE: Passwords must be set via separate secure deployment script
+-- DO NOT commit actual passwords to version control
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'api_writer') THEN
-        CREATE ROLE api_writer WITH LOGIN PASSWORD 'CHANGE_THIS_API_WRITER_PASSWORD';
+        CREATE ROLE api_writer WITH LOGIN;
+        -- Password must be set separately: ALTER ROLE api_writer WITH PASSWORD 'your-secure-password';
     END IF;
 END
 $$;
@@ -43,7 +46,8 @@ $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'audit_writer') THEN
-        CREATE ROLE audit_writer WITH LOGIN PASSWORD 'CHANGE_THIS_AUDIT_WRITER_PASSWORD';
+        CREATE ROLE audit_writer WITH LOGIN;
+        -- Password must be set separately: ALTER ROLE audit_writer WITH PASSWORD 'your-secure-password';
     END IF;
 END
 $$;
@@ -53,7 +57,8 @@ $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'aggregation_worker') THEN
-        CREATE ROLE aggregation_worker WITH LOGIN PASSWORD 'CHANGE_THIS_AGGREGATION_WORKER_PASSWORD';
+        CREATE ROLE aggregation_worker WITH LOGIN;
+        -- Password must be set separately: ALTER ROLE aggregation_worker WITH PASSWORD 'your-secure-password';
     END IF;
 END
 $$;
@@ -63,7 +68,8 @@ $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'analytics_reader') THEN
-        CREATE ROLE analytics_reader WITH LOGIN PASSWORD 'CHANGE_THIS_ANALYTICS_READER_PASSWORD';
+        CREATE ROLE analytics_reader WITH LOGIN;
+        -- Password must be set separately: ALTER ROLE analytics_reader WITH PASSWORD 'your-secure-password';
     END IF;
 END
 $$;
@@ -73,7 +79,8 @@ $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'supervisor_reader') THEN
-        CREATE ROLE supervisor_reader WITH LOGIN PASSWORD 'CHANGE_THIS_SUPERVISOR_READER_PASSWORD';
+        CREATE ROLE supervisor_reader WITH LOGIN;
+        -- Password must be set separately: ALTER ROLE supervisor_reader WITH PASSWORD 'your-secure-password';
     END IF;
 END
 $$;

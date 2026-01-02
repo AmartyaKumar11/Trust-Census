@@ -113,8 +113,18 @@ async function testAuthentication() {
     `Status: ${invalidResponse.status}`
   );
 
+  // Get test credentials from environment or use defaults for manual testing
+  const enumeratorUser = process.env.TEST_ENUMERATOR_USER || 'test_enumerator';
+  const enumeratorPass = process.env.TEST_ENUMERATOR_PASSWORD;
+  
+  if (!enumeratorPass) {
+    console.log('  ⚠️  TEST_ENUMERATOR_PASSWORD not set - skipping login test');
+    console.log('     Run create-test-users.js first and note the generated passwords');
+    return { enumeratorToken: null };
+  }
+
   // Test valid enumerator login
-  const enumeratorToken = await login('test_enumerator', 'enumerator_test_pwd_2024');
+  const enumeratorToken = await login(enumeratorUser, enumeratorPass);
   logResult(
     'Enumerator login succeeds',
     enumeratorToken !== null,
