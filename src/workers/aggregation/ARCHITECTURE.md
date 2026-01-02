@@ -135,7 +135,10 @@ identification of small communities. Only district level and above is permitted.
 
 ### Purpose
 Transform micro-aggregates into privacy-noised macro-aggregates
-at district, state, and national level.
+at state and national level ONLY.
+
+**IMPORTANT**: District level is handled in L2 (micro-aggregates).
+L3 contains only state and national level for policy use.
 
 ### Execution Rules
 - **Trigger**: Scheduled cron job or manual admin task (NOT user-triggered)
@@ -143,27 +146,54 @@ at district, state, and national level.
 - **Dependency**: Runs after Stage A completion
 - **Time Window**: Processes L2 aggregates from a fixed time window
 
+### Geographic Level Constraints
+
+| Level | Permitted | Rationale |
+|-------|-----------|-----------|
+| State | ✅ YES | Policy-level aggregation |
+| National | ✅ YES | Highest level aggregation |
+| District | ❌ FORBIDDEN | Already in L2 |
+| Block | ❌ FORBIDDEN | Too granular for L3 |
+| Village | ❌ FORBIDDEN | Too granular for L3 |
+
 ### Safety Constraints
 
 | Constraint | Value | Rationale |
 |------------|-------|-----------|
 | Differential privacy epsilon | ε ≤ 1.0 | Strong privacy guarantee |
-| Noise mechanism | Laplace or Gaussian | Standard DP mechanism |
+| Noise mechanism | Laplace | Standard DP mechanism |
 | Minimum L2 inputs | 10 micro-aggregates | Statistical validity |
-| Geographic threshold | State < 10 districts → noise increased | Privacy protection |
+| Noise logging | FORBIDDEN | Cannot log epsilon, noise values |
+| Pre-noise values | NEVER stored | Only noised values in L3 |
 
 ### Output
-- `macro_aggregates` table entries
-- Computation metadata (timestamp, hash, epsilon)
-- Noise parameters (cannot be reversed)
+- `macro_aggregates` table entries (state and national level only)
+- Computation metadata (timestamp, hash, aggregation_window_id)
+- Values are NOISED - original values are unrecoverable
+
+### L3 Table Fields
+| Field | Description |
+|-------|-------------|
+| geographic_level | 'state' or 'national' only |
+| geographic_code | State code or 'NATIONAL' |
+| caste_category | SC, ST, OBC, GENERAL, OTHER |
+| noisy_population | Population WITH differential privacy noise |
+| noisy_submission_count | Submission count WITH differential privacy noise |
+| aggregation_window_id | Identifies the time window |
+| created_at | Timestamp of aggregate creation |
 
 ### Invariants
 - ❌ Cannot be triggered via HTTP
 - ❌ Cannot accept user parameters
 - ❌ Cannot remove or reduce noise
-- ❌ Cannot access L1 directly
-- ✅ Must add irreversible privacy noise
-- ✅ Must be append-only (no updates)
+- ❌ Cannot access L1 directly (only L2)
+- ❌ Cannot aggregate at district level (that's L2)
+- ❌ Cannot log epsilon, noise values, or distributions
+- ❌ Cannot store pre-noise values
+- ❌ Cannot emit negative values after noise
+- ✅ Must add irreversible Laplace privacy noise
+- ✅ Must be append-only (INSERT only, no UPDATE or DELETE)
+- ✅ Must have no foreign keys or identifiers linking back to L2 or L1
 
 ---
 
@@ -375,14 +405,26 @@ src/workers/aggregation/
    - Non-sensitive logging (counts only, no raw data)
    - Aggregation window ID generation
 
+2. **Stage B: Macro-Aggregation** (`src/workers/aggregation/stages/macro.js`)
+   - SQL queries for state and national level aggregation
+   - Reads from L2 (micro_aggregates) only, never L1
+   - Differential privacy via Laplace mechanism (ε ≤ 1.0)
+   - Noise applied to population and submission counts
+   - INSERT-only writes to L3 with noised values
+   - Non-sensitive logging (counts only, no noise values or epsilon)
+   - Aggregation window ID generation
+
+3. **Privacy Noise** (`src/workers/aggregation/privacy/noise.js`)
+   - Laplace noise generation for differential privacy
+   - Gaussian noise generation (alternative mechanism)
+   - Privacy parameter validation
+
 ### NOT Implemented Yet
 
 The following components are placeholders and will be implemented in a future phase:
 
-1. **Stage B: Macro-Aggregation** - L2 → L3 computation logic
-2. **Privacy noise** - Differential privacy implementation
-3. **Scheduling** - Cron job configuration
-4. **Monitoring** - Aggregation job status tracking
+1. **Scheduling** - Cron job configuration
+2. **Monitoring** - Aggregation job status tracking
 
 ---
 

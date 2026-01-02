@@ -96,8 +96,11 @@ export const MACRO_AGGREGATION_CONFIG = Object.freeze({
   /**
    * Geographic levels for macro-aggregation
    * Only these levels produce L3 aggregates
+   * 
+   * NOTE: District level is handled in L2 (micro-aggregates).
+   * L3 contains only state and national level for policy use.
    */
-  ALLOWED_GEOGRAPHIC_LEVELS: Object.freeze(['district', 'state', 'national']),
+  ALLOWED_GEOGRAPHIC_LEVELS: Object.freeze(['state', 'national']),
 
   /**
    * Time window for processing

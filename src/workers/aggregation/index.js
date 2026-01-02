@@ -41,6 +41,10 @@ import {
   executeMicroAggregation as runMicroAggregation,
   validateMicroAggregationConfig,
 } from './stages/micro.js';
+import { 
+  executeMacroAggregation as runMacroAggregation,
+  validateMacroAggregationConfig,
+} from './stages/macro.js';
 
 const { Pool } = pg;
 
@@ -177,30 +181,24 @@ async function executeMicroAggregation(dbPool, logger) {
 }
 
 /**
- * Placeholder for Stage B: Macro-Aggregation (L2 → L3)
+ * Stage B: Macro-Aggregation (L2 → L3)
  * 
- * NOT IMPLEMENTED YET
- * This function will:
- * - Read from micro_aggregates (L2)
- * - Apply differential privacy noise
- * - Write to macro_aggregates (L3)
+ * Executes macro-aggregation using the implementation in stages/macro.js
+ * - Reads from micro_aggregates (L2)
+ * - Applies differential privacy noise (Laplace mechanism)
+ * - Writes to macro_aggregates (L3)
+ * - Aggregates at state and national level ONLY
  */
 async function executeMacroAggregation(dbPool, logger) {
-  logger.info('Stage B: Macro-Aggregation (L2 → L3)', { status: 'NOT_IMPLEMENTED' });
+  logger.info('Stage B: Macro-Aggregation (L2 → L3)', { status: 'STARTING' });
   
-  // PLACEHOLDER: Actual implementation will:
-  // 1. Query micro_aggregates for previous week's aggregates
-  // 2. Roll up to district/state/national level
-  // 3. Apply differential privacy noise (Laplace mechanism)
-  // 4. Insert results into macro_aggregates
-  // 5. Return summary statistics (no raw data)
-
-  return {
-    status: 'NOT_IMPLEMENTED',
-    recordsProcessed: 0,
-    aggregatesCreated: 0,
-    aggregatesSuppressed: 0,
-  };
+  // Validate macro-aggregation configuration
+  validateMacroAggregationConfig();
+  
+  // Execute macro-aggregation
+  const result = await runMacroAggregation(dbPool, logger);
+  
+  return result;
 }
 
 /**
