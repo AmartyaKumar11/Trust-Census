@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, 
@@ -18,7 +18,6 @@ import { useAuth, RequireAuth } from '@/lib/authContext';
 import { 
   createConsent, 
   createSubmission, 
-  verifySubmissionReceipt,
   ApiError,
   type ConsentCreateParams,
   type SubmissionCreateParams,
@@ -30,6 +29,16 @@ import {
   isOfflineStorageAvailable,
   type SyncResult,
 } from '@/lib/offlineStorage';
+import {
+  getStateOptions,
+  getDistrictOptions,
+  getBlockOptions,
+  stateHasDistricts,
+  districtHasBlocks,
+  getStateName,
+  getDistrictName,
+  getBlockName,
+} from '@/lib/geographyData';
 
 // =============================================================================
 // CONSTANTS
@@ -43,14 +52,6 @@ const CASTE_CATEGORIES = [
   { value: 'OBC', label: 'Other Backward Class (OBC)' },
   { value: 'GENERAL', label: 'General' },
   { value: 'OTHER', label: 'Other' },
-] as const;
-
-const STATE_OPTIONS = [
-  { value: 'MH', label: 'Maharashtra' },
-  { value: 'KA', label: 'Karnataka' },
-  { value: 'TN', label: 'Tamil Nadu' },
-  { value: 'UP', label: 'Uttar Pradesh' },
-  { value: 'GJ', label: 'Gujarat' },
 ] as const;
 
 // Consent text to display
@@ -222,6 +223,34 @@ function SubmitPageContent() {
   }, [refreshPendingCount]);
 
   // =============================================================================
+  // GEOGRAPHY CASCADING RESET
+  // =============================================================================
+  
+  const handleStateChange = useCallback((stateCode: string) => {
+    setConsentForm(prev => ({
+      ...prev,
+      stateCode,
+      districtCode: '', // Reset district when state changes
+      blockCode: '',    // Reset block when state changes
+    }));
+  }, []);
+
+  const handleDistrictChange = useCallback((districtCode: string) => {
+    setConsentForm(prev => ({
+      ...prev,
+      districtCode,
+      blockCode: '', // Reset block when district changes
+    }));
+  }, []);
+
+  const handleBlockChange = useCallback((blockCode: string) => {
+    setConsentForm(prev => ({
+      ...prev,
+      blockCode,
+    }));
+  }, []);
+
+  // =============================================================================
   // CONSENT SUBMISSION
   // =============================================================================
   
@@ -303,6 +332,7 @@ function SubmitPageContent() {
       return;
     }
 
+    // Submission payload uses canonical codes (NEVER human-readable names)
     const submissionPayload = {
       stateCode: consentForm.stateCode,
       districtCode: consentForm.districtCode,
@@ -595,7 +625,10 @@ function SubmitPageContent() {
         {step === 'consent' && (
           <ConsentStep
             form={consentForm}
-            setForm={setConsentForm}
+            onStateChange={handleStateChange}
+            onDistrictChange={handleDistrictChange}
+            onBlockChange={handleBlockChange}
+            onConsentChange={(confirmed) => setConsentForm(prev => ({ ...prev, consentConfirmed: confirmed }))}
             onSubmit={handleConsentSubmit}
             isLoading={isLoading}
             isOnline={isOnline}
@@ -641,13 +674,33 @@ function SubmitPageContent() {
 
 interface ConsentStepProps {
   form: ConsentFormData;
-  setForm: React.Dispatch<React.SetStateAction<ConsentFormData>>;
+  onStateChange: (stateCode: string) => void;
+  onDistrictChange: (districtCode: string) => void;
+  onBlockChange: (blockCode: string) => void;
+  onConsentChange: (confirmed: boolean) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
   isOnline: boolean;
 }
 
-function ConsentStep({ form, setForm, onSubmit, isLoading, isOnline }: ConsentStepProps) {
+function ConsentStep({ 
+  form, 
+  onStateChange, 
+  onDistrictChange, 
+  onBlockChange,
+  onConsentChange,
+  onSubmit, 
+  isLoading, 
+  isOnline 
+}: ConsentStepProps) {
+  // Get options based on current selections
+  const stateOptions = useMemo(() => getStateOptions(), []);
+  const districtOptions = useMemo(() => getDistrictOptions(form.stateCode), [form.stateCode]);
+  const blockOptions = useMemo(() => getBlockOptions(form.stateCode, form.districtCode), [form.stateCode, form.districtCode]);
+  
+  const hasDistricts = stateHasDistricts(form.stateCode);
+  const hasBlocks = districtHasBlocks(form.stateCode, form.districtCode);
+
   return (
     <Card variant="elevated" className="max-w-2xl mx-auto">
       <CardHeader>
@@ -675,39 +728,56 @@ function ConsentStep({ form, setForm, onSubmit, isLoading, isOnline }: ConsentSt
         )}
 
         <form onSubmit={onSubmit} className="space-y-6">
+          {/* Geography Privacy Notice */}
+          <div className="bg-[var(--color-cream-50)] border border-[var(--color-cream-200)] rounded-lg p-4">
+            <p className="text-sm text-[var(--color-charcoal-600)]">
+              <strong>Privacy Note:</strong> Geographic selections are used only for aggregation and policy analysis.
+              Individual households or persons are never identified.
+            </p>
+          </div>
+
+          {/* State Selection */}
           <Select
             label="State"
-            options={[...STATE_OPTIONS]}
+            options={stateOptions}
             placeholder="Select state"
             required
             value={form.stateCode}
-            onChange={(e) => setForm(prev => ({ ...prev, stateCode: e.target.value }))}
+            onChange={(e) => onStateChange(e.target.value)}
             disabled={isLoading || !isOnline}
           />
 
-          <Input
-            label="District Code"
-            type="text"
-            placeholder="e.g., 0101"
-            pattern="[0-9]{4}"
-            hint="4-digit district code"
+          {/* District Selection */}
+          <Select
+            label="District"
+            options={districtOptions}
+            placeholder={form.stateCode ? (hasDistricts ? "Select district" : "No districts available for this state") : "Select state first"}
             required
             value={form.districtCode}
-            onChange={(e) => setForm(prev => ({ ...prev, districtCode: e.target.value }))}
-            disabled={isLoading || !isOnline}
+            onChange={(e) => onDistrictChange(e.target.value)}
+            disabled={isLoading || !isOnline || !form.stateCode || !hasDistricts}
           />
 
-          <Input
-            label="Block Code"
-            type="text"
-            placeholder="e.g., 010101"
-            pattern="[0-9]{6}"
-            hint="6-digit block code"
+          {/* Block / Tehsil Selection */}
+          <Select
+            label="Block / Tehsil"
+            options={blockOptions}
+            placeholder={form.districtCode ? (hasBlocks ? "Select block / tehsil" : "No blocks available for this district") : "Select district first"}
             required
             value={form.blockCode}
-            onChange={(e) => setForm(prev => ({ ...prev, blockCode: e.target.value }))}
-            disabled={isLoading || !isOnline}
+            onChange={(e) => onBlockChange(e.target.value)}
+            disabled={isLoading || !isOnline || !form.districtCode || !hasBlocks}
           />
+
+          {/* State without data warning */}
+          {form.stateCode && !hasDistricts && (
+            <Disclaimer variant="info">
+              <p>
+                District and block data for {getStateName(form.stateCode)} is not yet available in this demo.
+                Please select Maharashtra for the full experience.
+              </p>
+            </Disclaimer>
+          )}
 
           {/* Consent Text Display */}
           <div className="bg-[var(--color-cream-50)] p-4 rounded-lg border border-[var(--color-cream-200)]">
@@ -721,7 +791,7 @@ function ConsentStep({ form, setForm, onSubmit, isLoading, isOnline }: ConsentSt
               <input
                 type="checkbox"
                 checked={form.consentConfirmed}
-                onChange={(e) => setForm(prev => ({ ...prev, consentConfirmed: e.target.checked }))}
+                onChange={(e) => onConsentChange(e.target.checked)}
                 disabled={isLoading || !isOnline}
                 className="mt-1 w-5 h-5 rounded border-[var(--color-charcoal-300)] text-[var(--color-navy-600)] focus:ring-[var(--color-navy-500)]"
               />
@@ -778,6 +848,11 @@ function SubmissionStep({
   isLoading,
   isOnline,
 }: SubmissionStepProps) {
+  // Get human-readable names for display
+  const stateName = getStateName(geographicData.stateCode) || geographicData.stateCode;
+  const districtName = getDistrictName(geographicData.stateCode, geographicData.districtCode) || geographicData.districtCode;
+  const blockName = getBlockName(geographicData.stateCode, geographicData.districtCode, geographicData.blockCode) || geographicData.blockCode;
+
   return (
     <Card variant="elevated" className="max-w-2xl mx-auto">
       <CardHeader>
@@ -802,21 +877,21 @@ function SubmissionStep({
           </div>
         </div>
 
-        {/* Geographic Context (Read-only) */}
+        {/* Geographic Context (Read-only, human-readable) */}
         <div className="bg-[var(--color-cream-50)] rounded-lg p-4 mb-6">
           <p className="text-sm font-medium text-[var(--color-charcoal-500)] mb-2">Geographic Scope (from consent)</p>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <span className="text-[var(--color-charcoal-500)]">State:</span>{' '}
-              <span className="font-medium">{geographicData.stateCode}</span>
+              <span className="font-medium">{stateName}</span>
             </div>
             <div>
               <span className="text-[var(--color-charcoal-500)]">District:</span>{' '}
-              <span className="font-medium">{geographicData.districtCode}</span>
+              <span className="font-medium">{districtName}</span>
             </div>
             <div>
               <span className="text-[var(--color-charcoal-500)]">Block:</span>{' '}
-              <span className="font-medium">{geographicData.blockCode}</span>
+              <span className="font-medium">{blockName}</span>
             </div>
           </div>
         </div>
@@ -841,6 +916,14 @@ function SubmissionStep({
         )}
 
         <form onSubmit={onSubmit} className="space-y-6">
+          {/* Census Data Privacy Notice */}
+          <div className="bg-[var(--color-cream-50)] border border-[var(--color-cream-200)] rounded-lg p-4">
+            <p className="text-sm text-[var(--color-charcoal-600)]">
+              <strong>Data Note:</strong> Each submission represents aggregated data for a local community or
+              household group, not an individual person.
+            </p>
+          </div>
+
           <Input
             label="Village Code"
             type="text"

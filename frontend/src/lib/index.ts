@@ -87,3 +87,21 @@ export {
   type SyncResult,
 } from './offlineStorage';
 
+// Geography Data (static, MVP scope)
+export {
+  GEOGRAPHY_DATA,
+  getStateOptions,
+  getDistrictOptions,
+  getBlockOptions,
+  getDistrictsForState,
+  getBlocksForDistrict,
+  getStateName,
+  getDistrictName,
+  getBlockName,
+  stateHasDistricts,
+  districtHasBlocks,
+  type State,
+  type District,
+  type Block,
+} from './geographyData';
+
