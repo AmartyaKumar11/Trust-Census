@@ -26,8 +26,10 @@ const projectRoot = join(__dirname, '..');
 dotenv.config({ path: join(projectRoot, '.env') });
 
 const DB_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  // Use 127.0.0.1 (not localhost) to force IPv4 and avoid DNS issues
+  host: process.env.DB_HOST || '127.0.0.1',
+  // Port 5433 for Docker PostgreSQL (5432 is reserved for host PostgreSQL)
+  port: parseInt(process.env.DB_PORT || '5433'),
   database: process.env.DB_NAME || 'trust_census',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',

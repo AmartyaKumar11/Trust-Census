@@ -85,6 +85,7 @@ export const LEGACY_ROLE_MAPPING = Object.freeze({
 
 /**
  * Validate if a role is a valid system role
+ * Accepts both new role names and legacy role names
  * 
  * @param {string} role - Role to validate
  * @returns {boolean} - True if valid, false otherwise
@@ -102,7 +103,16 @@ export function isValidRole(role) {
   }
   
   // Check if it's a valid system role
-  return VALID_ROLES.includes(normalizedRole);
+  if (VALID_ROLES.includes(normalizedRole)) {
+    return true;
+  }
+  
+  // Check if it's a legacy role that can be mapped
+  if (LEGACY_ROLE_MAPPING[normalizedRole]) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**

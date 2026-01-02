@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { getDB } from '../db/connection.js';
 import { validate, userCreationSchema } from '../middleware/validation.js';
-import { logAuditEvent } from '../audit/logger.js';
+import { logAuditEvent, AuditActionCategory, AuditOutcome } from '../audit/logger.js';
 
 /**
  * Authentication Routes
@@ -76,17 +76,17 @@ export async function authRoutes(fastify) {
     const user = result.rows[0];
 
     // Log audit event
-    await logAuditEvent(fastify, {
-      userId: user.id,
-      actionType: 'USER_REGISTERED',
-      resourceType: 'user',
-      resourceId: user.id,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+    await logAuditEvent({
+      timestamp: new Date().toISOString(),
+      actorRole: role,
+      actorId: user.id,
+      actionCategory: AuditActionCategory.AUTH_SUCCESS,
       requestMethod: request.method,
       requestPath: request.url,
+      outcome: AuditOutcome.SUCCESS,
       statusCode: 201,
-      metadata: { role }
+      ipAddress: request.ip,
+      metadata: {}
     });
 
     return reply.code(201).send({
@@ -121,17 +121,17 @@ export async function authRoutes(fastify) {
 
     if (result.rows.length === 0) {
       // Log failed login attempt
-      await logAuditEvent(fastify, {
-        userId: null,
-        actionType: 'LOGIN_FAILED',
-        resourceType: 'auth',
-        resourceId: null,
-        ipAddress: request.ip,
-        userAgent: request.headers['user-agent'],
+      await logAuditEvent({
+        timestamp: new Date().toISOString(),
+        actorRole: 'ANONYMOUS',
+        actorId: null,
+        actionCategory: AuditActionCategory.AUTH_FAILURE,
         requestMethod: request.method,
         requestPath: request.url,
+        outcome: AuditOutcome.DENIED,
         statusCode: 401,
-        metadata: { username }
+        ipAddress: request.ip,
+        metadata: {}
       });
 
       return reply.code(401).send({ error: 'Invalid credentials' });
@@ -148,16 +148,16 @@ export async function authRoutes(fastify) {
 
     if (!isValid) {
       // Log failed login attempt
-      await logAuditEvent(fastify, {
-        userId: user.id,
-        actionType: 'LOGIN_FAILED',
-        resourceType: 'auth',
-        resourceId: user.id,
-        ipAddress: request.ip,
-        userAgent: request.headers['user-agent'],
+      await logAuditEvent({
+        timestamp: new Date().toISOString(),
+        actorRole: user.role,
+        actorId: user.id,
+        actionCategory: AuditActionCategory.AUTH_FAILURE,
         requestMethod: request.method,
         requestPath: request.url,
+        outcome: AuditOutcome.DENIED,
         statusCode: 401,
+        ipAddress: request.ip,
         metadata: {}
       });
 
@@ -172,16 +172,16 @@ export async function authRoutes(fastify) {
     });
 
     // Log successful login
-    await logAuditEvent(fastify, {
-      userId: user.id,
-      actionType: 'LOGIN_SUCCESS',
-      resourceType: 'auth',
-      resourceId: user.id,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+    await logAuditEvent({
+      timestamp: new Date().toISOString(),
+      actorRole: user.role,
+      actorId: user.id,
+      actionCategory: AuditActionCategory.AUTH_SUCCESS,
       requestMethod: request.method,
       requestPath: request.url,
+      outcome: AuditOutcome.SUCCESS,
       statusCode: 200,
+      ipAddress: request.ip,
       metadata: {}
     });
 
@@ -195,13 +195,16 @@ export async function authRoutes(fastify) {
     });
   });
 
-  // Verify token
-  fastify.get('/auth/verify', {
-    preHandler: [fastify.authenticate]
-  }, async (request, reply) => {
-    return reply.send({
-      user: request.user
-    });
+  // Verify token - use onRequest hook instead of preHandler for authentication
+  fastify.get('/auth/verify', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+      return reply.send({
+        user: request.user
+      });
+    } catch (err) {
+      return reply.code(401).send({ error: 'Invalid or expired token' });
+    }
   });
 }
 

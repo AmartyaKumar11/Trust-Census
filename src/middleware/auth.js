@@ -1,3 +1,4 @@
+import fp from 'fastify-plugin';
 import jwt from '@fastify/jwt';
 import { getDB } from '../db/connection.js';
 import { 
@@ -46,9 +47,9 @@ const AUTH_ERRORS = Object.freeze({
 });
 
 /**
- * Register authentication plugin
+ * Register authentication plugin implementation
  */
-export async function authPlugin(fastify) {
+async function authPluginImpl(fastify) {
   // Register JWT plugin
   await fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'CHANGE_THIS_SECURE_SECRET',
@@ -159,54 +160,12 @@ export async function authPlugin(fastify) {
     }
   });
 
-  /**
-   * Role requirement decorator (legacy compatibility)
-   * Use fastify.requireRoles() from RBAC middleware instead
-   * 
-   * @deprecated Use requireRoles from rbac/middleware.js
-   */
-  fastify.decorate('requireRole', function (...allowedRoles) {
-    return async function (request, reply) {
-      // DENY BY DEFAULT: No user = no access
-      if (!request.user) {
-        return reply.code(401).send(AUTH_ERRORS.INVALID_TOKEN);
-      }
-
-      // DENY BY DEFAULT: No role = no access
-      if (!request.user.role) {
-        return reply.code(403).send(AUTH_ERRORS.INVALID_ROLE);
-      }
-
-      // DENY BY DEFAULT: Forbidden role requested = no access
-      for (const role of allowedRoles) {
-        if (isForbiddenRole(role)) {
-          return reply.code(403).send(AUTH_ERRORS.FORBIDDEN_ROLE);
-        }
-      }
-
-      // DENY BY DEFAULT: User has forbidden role = no access
-      if (isForbiddenRole(request.user.role)) {
-        return reply.code(403).send(AUTH_ERRORS.FORBIDDEN_ROLE);
-      }
-
-      // Check if user's role is in allowed roles (with normalization)
-      const userRole = normalizeRole(request.user.role);
-      const isAllowed = allowedRoles.some(allowedRole => {
-        const normalizedAllowed = normalizeRole(allowedRole);
-        return normalizedAllowed === userRole;
-      });
-
-      // DENY BY DEFAULT: Role not in allowed list = no access
-      if (!isAllowed) {
-        return reply.code(403).send(AUTH_ERRORS.FORBIDDEN_ROLE);
-      }
-    };
-  });
-
-  /**
-   * Expose role constants
-   */
-  fastify.decorate('SystemRoles', SystemRoles);
-  fastify.decorate('VALID_ROLES', VALID_ROLES);
-  fastify.decorate('LEGACY_ROLE_MAPPING', LEGACY_ROLE_MAPPING);
+  // NOTE: requireRole is defined in rbac/middleware.js
+  // Role constants are also defined there
 }
+
+// Wrap with fastify-plugin to ensure decorators propagate to child contexts
+export const authPlugin = fp(authPluginImpl, {
+  name: 'auth-plugin',
+  fastify: '4.x',
+});

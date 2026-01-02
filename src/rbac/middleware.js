@@ -1,3 +1,4 @@
+import fp from 'fastify-plugin';
 import { 
   SystemRoles, 
   isValidRole, 
@@ -143,13 +144,22 @@ export function requireAuthenticated() {
 
 /**
  * Fastify plugin to register RBAC decorators
+ * Wrapped with fastify-plugin to ensure decorators are available globally
  */
-export async function rbacPlugin(fastify) {
+async function rbacPluginImpl(fastify) {
   /**
    * Decorate fastify with role requirement function
    * Usage: fastify.requireRoles(SystemRoles.ENUMERATOR, SystemRoles.SUPERVISOR)
    */
   fastify.decorate('requireRoles', function (...allowedRoles) {
+    return requireRoles(...allowedRoles);
+  });
+
+  /**
+   * Alias for requireRoles (backward compatibility)
+   * Usage: fastify.requireRole('ENUMERATOR', 'SUPERVISOR')
+   */
+  fastify.decorate('requireRole', function (...allowedRoles) {
     return requireRoles(...allowedRoles);
   });
 
@@ -199,6 +209,12 @@ export async function rbacPlugin(fastify) {
     }
   });
 }
+
+// Wrap with fastify-plugin to ensure decorators propagate to child contexts
+export const rbacPlugin = fp(rbacPluginImpl, {
+  name: 'rbac-plugin',
+  fastify: '4.x',
+});
 
 /**
  * Export role constants for convenience

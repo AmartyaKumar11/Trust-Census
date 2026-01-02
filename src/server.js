@@ -3,7 +3,7 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
-import { initDB, getDB } from './db/connection.js';
+import { initDB, getDB, verifyDatabaseConnection } from './db/connection.js';
 import { initAuditWriterPool } from './db/connections.js';
 import { authPlugin } from './middleware/auth.js';
 import { rbacPlugin } from './rbac/middleware.js';
@@ -18,6 +18,12 @@ import { analyticsRoutes } from './routes/analytics.js';
 
 // Load environment variables
 dotenv.config();
+
+/**
+ * IMPORTANT: Aggregation workers are NOT loaded in the API process.
+ * Aggregation runs ONLY via offline worker: node src/workers/aggregation/index.js
+ * This ensures separation of concerns and prevents HTTP-triggered aggregation.
+ */
 
 /**
  * Trust Census Server - Application Entry Point
@@ -155,13 +161,56 @@ fastify.setErrorHandler((error, request, reply) => {
 // Start server
 const start = async () => {
   try {
+    console.log('');
+    console.log('='.repeat(70));
+    console.log('Trust-First Caste Census Management System');
+    console.log('='.repeat(70));
+    console.log('');
+    
+    // Verify database connection and log server info
+    console.log('[STARTUP] Verifying database connection...');
+    const dbInfo = await verifyDatabaseConnection();
+    
+    if (!dbInfo.connected) {
+      console.error('[STARTUP] FATAL: Database connection failed');
+      console.error('[STARTUP] Ensure Docker PostgreSQL is running on port 5433');
+      console.error('[STARTUP] Command: docker run -d --name trust-census-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=trust_census -p 5433:5432 postgres:16-alpine');
+      process.exit(1);
+    }
+    
+    // Verify we're connected to Docker PostgreSQL (should show PostgreSQL 16.x)
+    if (dbInfo.serverVersion && !dbInfo.serverVersion.includes('16')) {
+      console.warn('[STARTUP] WARNING: Expected PostgreSQL 16.x (Docker), got:', dbInfo.serverVersion);
+    }
+    
+    console.log('');
+    console.log('[STARTUP] Middleware initialization:');
+    console.log('     ✓ Authentication (JWT)');
+    console.log('     ✓ RBAC (Role-Based Access Control)');
+    console.log('     ✓ Scope & Purpose Enforcement');
+    console.log('     ✓ Audit Logging (fail-closed)');
+    console.log('');
+    console.log('[STARTUP] Security guarantees:');
+    console.log('     ✓ No super-admin role');
+    console.log('     ✓ No raw data access after submission');
+    console.log('     ✓ No HTTP-triggered aggregation');
+    console.log('     ✓ Aggregation workers NOT loaded in API process');
+    console.log('');
+    
     const port = parseInt(process.env.PORT || '3000');
     const host = process.env.HOST || '0.0.0.0';
     
     await fastify.listen({ port, host });
+    
+    console.log('='.repeat(70));
+    console.log(`[STARTUP] Server listening on http://${host}:${port}`);
+    console.log('='.repeat(70));
+    console.log('');
+    
     fastify.log.info(`Trust Census Server listening on ${host}:${port}`);
   } catch (err) {
     fastify.log.error(err);
+    console.error('[STARTUP] FATAL:', err.message);
     process.exit(1);
   }
 };

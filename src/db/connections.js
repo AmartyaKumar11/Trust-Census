@@ -1,10 +1,20 @@
 import pg from 'pg';
+import dns from 'dns';
+
 const { Pool } = pg;
+
+// Force IPv4 resolution to avoid Docker networking issues on Windows
+dns.setDefaultResultOrder('ipv4first');
 
 /**
  * Database Connection Management with Role Separation
  * 
  * RESPONSIBILITY: Provide separate database connections for each trust boundary
+ * 
+ * CONFIGURATION:
+ * - Default port: 5433 (Docker PostgreSQL)
+ * - Port 5432 is reserved for host PostgreSQL and MUST NOT be used
+ * - IPv4 is forced to ensure deterministic Docker connectivity
  * 
  * This module provides distinct connection pools for different database roles,
  * enforcing separation of powers at the connection level.
@@ -20,11 +30,13 @@ const { Pool } = pg;
  * - Provide separate connection pools for each role
  * - Prevent credential sharing across concerns
  * - Enforce role-based access at connection level
+ * - Connect to Docker PostgreSQL on port 5433
  * 
  * MUST NEVER:
  * - Use superuser credentials in application
  * - Share credentials across different concerns
  * - Allow a single connection to access all layers
+ * - Use port 5432 (reserved for host PostgreSQL)
  */
 
 /**
@@ -40,15 +52,18 @@ const pools = {
 
 /**
  * Base connection configuration
+ * Uses port 5433 for Docker PostgreSQL (5432 reserved for host)
  */
 function getBaseConfig() {
   return {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
+    // Explicit IPv4 address to avoid DNS resolution issues
+    host: process.env.DB_HOST || '127.0.0.1',
+    // Port 5433 for Docker PostgreSQL (5432 is reserved for host PostgreSQL)
+    port: parseInt(process.env.DB_PORT || '5433'),
     database: process.env.DB_NAME || 'trust_census',
     max: 10, // Maximum pool size per role
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 5000,
   };
 }
 
