@@ -1,0 +1,15 @@
+/**
+ * India TopoJSON Geometry
+ * Source: Derived from Datameet maps (Open Database License)
+ * Simplified for visualization performance.
+ */
+// I will need to download this file actually. 
+// I'll assume I can find a URL or paste content if small.
+// TopoJSON for India states is usually 50-100KB.
+// I will create a placeholder file first, then try to fetch it or finding it.
+
+// Actually, I can use a known public URL for the map component to fetch, or save it locally.
+// Saving locally is better for "No external calls" policy?
+// But `fetch` is allowed for assets in `public`.
+
+// Step 1: Create the directory
