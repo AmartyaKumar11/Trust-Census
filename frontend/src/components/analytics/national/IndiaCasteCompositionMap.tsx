@@ -11,8 +11,11 @@ import { PolicyCategory, CATEGORY_DEFINITIONS } from '@/lib/stateCategories';
 // Usually they are 'Maharashtra', 'Karnataka', etc.
 
 // Use a stable public TopoJSON source for India States
-// Use GeoHacker GeoJSON (Standard Lat/Long) - Proven D3 Compatible
-const INDIA_TOPO_JSON = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson';
+// Source 1: Sovereign Outline (Full Claimed Territory including PoK/Aksai Chin)
+const INDIA_SOVEREIGN_JSON = 'https://raw.githubusercontent.com/datameet/maps/master/Country/india-composite.geojson';
+
+// Source 2: Administrative States (For Data Binding)
+const INDIA_STATES_JSON = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson';
 
 interface IndiaCasteCompositionMapProps {
     stateCategories: Record<string, PolicyCategory>;
@@ -21,6 +24,11 @@ interface IndiaCasteCompositionMapProps {
 }
 
 export function IndiaCasteCompositionMap({ stateCategories, selectedState, onStateClick }: IndiaCasteCompositionMapProps) {
+    const [mapScale, setMapScale] = React.useState(1100);
+
+    const handleZoomIn = () => setMapScale(s => Math.min(s + 200, 2000));
+    const handleZoomOut = () => setMapScale(s => Math.max(s - 200, 600));
+
     return (
         <div className="bg-white rounded-xl border border-[var(--color-navy-100)] overflow-hidden shadow-sm relative h-[500px] w-full flex items-center justify-center bg-[var(--color-cream-50)]">
 
@@ -37,80 +45,95 @@ export function IndiaCasteCompositionMap({ stateCategories, selectedState, onSta
                     ))}
                 </div>
             </div>
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 right-4 flex flex-col space-y-1 z-10">
+                <button
+                    onClick={handleZoomIn}
+                    className="w-6 h-6 flex items-center justify-center bg-white rounded border border-gray-200 shadow text-gray-600 hover:bg-gray-50 hover:text-navy-700 font-bold active:scale-95 transition-all text-xs"
+                    title="Zoom In"
+                >
+                    +
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="w-6 h-6 flex items-center justify-center bg-white rounded border border-gray-200 shadow text-gray-600 hover:bg-gray-50 hover:text-navy-700 font-bold active:scale-95 transition-all text-xs"
+                    title="Zoom Out"
+                >
+                    -
+                </button>
+            </div>
+
             <ComposableMap
                 projection="geoMercator"
                 projectionConfig={{
-                    scale: 1000,
-                    center: [78.9629, 23.5937]
+                    scale: mapScale, // Slightly reduced to fit height
+                    center: [78.96, 24] // Shifted North to include J&K
                 }}
                 className="w-full h-full"
             >
                 {/* STRICT CONSTRAINT: No Zoom/Pan controls. Static View. */}
 
                 {/* LAYER 1: Sovereign Base Layer (Neutral/Claimed Territory) */}
-                {/* Renders full claimed territory as a neutral base to ensure no region is omitted, regardless of data availability. */}
-                <Geographies geography={INDIA_TOPO_JSON}>
+                {/* Renders full claimed territory (india-composite) as a neutral base. */}
+                <Geographies geography={INDIA_SOVEREIGN_JSON}>
                     {({ geographies }) =>
                         geographies.map((geo) => (
                             <Geography
                                 key={`base-${geo.rsmKey}`}
                                 geography={geo}
-                                fill="var(--color-charcoal-200)" // Neutral Gray for Insufficient Data/Base
-                                stroke="var(--color-navy-200)"   // Subtle border for base
-                                strokeWidth={0.5}
+                                fill="var(--color-charcoal-200)" // Neutral Gray for Base
+                                stroke="var(--color-navy-200)"   // Outer sovereign border
+                                strokeWidth={1}
                                 style={{
                                     default: { outline: 'none' },
-                                    hover: { outline: 'none' }, // Base layer specific hover disabled/neutral?
+                                    hover: { outline: 'none' },
                                     pressed: { outline: 'none' }
                                 }}
-                            // No interaction on base layer
                             />
                         ))
                     }
                 </Geographies>
 
-                {/* LAYER 2: Policy Data Overlay */}
-                {/* Only renders states where categorization exists. Holes reveal the base layer. */}
-                <Geographies geography={INDIA_TOPO_JSON}>
+                {/* LAYER 2: Policy Data Overlay (States) */}
+                {/* Renders ALL states borders, but only fills those with data. */}
+                <Geographies geography={INDIA_STATES_JSON}>
                     {({ geographies }) => {
                         return geographies.map((geo) => {
                             // Robust name matching
-                            // console.log('Region Props:', geo.properties); 
+                            // console.log('Region Props:', geo.properties);
                             const stateName = geo.properties.name || geo.properties.NAME_1 || geo.properties.st_nm || 'Unknown';
-
                             const category = stateCategories[stateName];
 
-                            // FILTER: Only render if data exists. If undefined (Insufficient), skip to reveal Base Layer.
-                            if (!category || category === 'INSUFFICIENT_DATA') return null;
-
-                            const def = CATEGORY_DEFINITIONS[category];
+                            const isInsufficient = !category || category === 'INSUFFICIENT_DATA';
+                            const def = !isInsufficient ? CATEGORY_DEFINITIONS[category] : null;
                             const isSelected = selectedState === stateName;
 
                             return (
                                 <Geography
                                     key={`data-${geo.rsmKey}`}
                                     geography={geo}
-                                    onClick={() => onStateClick(stateName)}
+                                    onClick={() => !isInsufficient && onStateClick(stateName)}
                                     style={{
                                         default: {
-                                            fill: def.color,
-                                            stroke: isSelected ? '#1a202c' : '#FFFFFF',
-                                            strokeWidth: isSelected ? 2 : 1, // Distinct admin borders
+                                            fill: isInsufficient ? 'transparent' : def?.color, // Reveal base if no data
+                                            stroke: '#FFFFFF', // Internal borders always white
+                                            strokeWidth: 0.5,
                                             outline: 'none',
-                                            opacity: isSelected ? 1 : 0.95, // Slight transparency to blend? No, solid.
+                                            opacity: 1,
                                             transition: 'all 250ms'
                                         },
                                         hover: {
-                                            fill: def.color,
-                                            stroke: '#1a202c',
-                                            strokeWidth: 1.5,
-                                            outline: 'none',
+                                            fill: isInsufficient ? 'transparent' : def?.color,
+                                            stroke: isInsufficient ? '#FFFFFF' : '#1a202c',
+                                            strokeWidth: isInsufficient ? 0.5 : 1.5,
+                                            outline: 'none', // No hover effect for insufficient data
                                             opacity: 1,
-                                            cursor: 'pointer'
+                                            cursor: isInsufficient ? 'default' : 'pointer'
                                         },
                                         pressed: {
-                                            fill: def.color,
-                                            stroke: '#1a202c',
+                                            fill: isInsufficient ? 'transparent' : def?.color,
+                                            stroke: isInsufficient ? '#FFFFFF' : '#1a202c',
                                             strokeWidth: 2,
                                             outline: 'none',
                                         }
