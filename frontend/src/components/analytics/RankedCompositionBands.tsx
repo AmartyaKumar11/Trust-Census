@@ -12,40 +12,40 @@ function toRoundedRange(percentage: number): string {
 export function RankedCompositionBands({ composition }: RankedCompositionBandsProps) {
     const sorted = [...composition].sort((a, b) => b.percentage - a.percentage);
 
-    const getBand = (p: number) => {
-        if (p > 25) return { label: 'High Presence', width: 'w-full', color: 'bg-[var(--color-navy-700)]' };
-        if (p > 10) return { label: 'Moderate Presence', width: 'w-2/3', color: 'bg-[var(--color-navy-500)]' };
-        return { label: 'Lower Presence', width: 'w-1/3', color: 'bg-[var(--color-navy-300)]' };
-    };
-
     return (
         <div className="bg-white p-6 md:p-8 rounded-xl border border-[var(--color-navy-100)] shadow-sm">
             <div className="mb-6">
                 <h3 className="font-serif text-lg font-bold text-[var(--color-navy-900)]">
-                    Caste Composition — Ranked Categories (Policy Bands)
+                    Caste Composition — Ranked Categories
                 </h3>
                 <p className="text-xs text-[var(--color-charcoal-500)] italic mt-1">
-                    Categories are shown in ranked policy bands. Ranges are approximate and privacy-protected.
+                    Visual proportions based on noisy estimates. Ranges are approximate.
                 </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
                 {sorted.map((item) => {
-                    const band = getBand(item.percentage);
+                    const widthPct = Math.max(item.percentage, 1);
+
                     return (
-                        <div key={item.category} className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                            <div className="w-32 shrink-0">
-                                <span className="font-semibold text-[var(--color-navy-800)]">{item.category}</span>
+                        <div key={item.category} className="group">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-bold text-sm text-[var(--color-navy-800)] group-hover:text-[var(--color-navy-600)] transition-colors">
+                                    {item.category}
+                                </span>
+                                <span className="text-xs font-mono text-[var(--color-charcoal-600)]">
+                                    ~{toRoundedRange(item.percentage)}
+                                </span>
                             </div>
-                            <div className="flex-1 bg-[var(--color-cream-100)] rounded-md overflow-hidden relative h-12 md:h-14">
+
+                            <div className="w-full bg-[var(--color-cream-200)] rounded-md h-3 overflow-hidden">
                                 <div
-                                    className={`h-full ${band.color} ${band.width} flex items-center px-4 transition-all duration-500`}
+                                    className="h-full bg-[var(--color-navy-600)] rounded-md shadow-sm transition-all duration-1000 ease-out"
+                                    style={{ width: `${widthPct}%` }}
                                 >
-                                    <span className="text-white text-sm font-medium tracking-wide">~{toRoundedRange(item.percentage)}</span>
+                                    {/* Optical flare for aesthetics */}
+                                    <div className="w-full h-full opacity-10 bg-gradient-to-r from-white/20 to-transparent" />
                                 </div>
-                            </div>
-                            <div className="w-32 shrink-0 md:text-right text-xs text-[var(--color-charcoal-500)] uppercase tracking-wide font-medium">
-                                {band.label}
                             </div>
                         </div>
                     );
