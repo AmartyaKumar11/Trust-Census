@@ -47,38 +47,57 @@ export function IndiaCasteCompositionMap({ stateCategories, selectedState, onSta
             >
                 {/* STRICT CONSTRAINT: No Zoom/Pan controls. Static View. */}
 
+                {/* LAYER 1: Sovereign Base Layer (Neutral/Claimed Territory) */}
+                {/* Renders full claimed territory as a neutral base to ensure no region is omitted, regardless of data availability. */}
+                <Geographies geography={INDIA_TOPO_JSON}>
+                    {({ geographies }) =>
+                        geographies.map((geo) => (
+                            <Geography
+                                key={`base-${geo.rsmKey}`}
+                                geography={geo}
+                                fill="var(--color-charcoal-200)" // Neutral Gray for Insufficient Data/Base
+                                stroke="var(--color-navy-200)"   // Subtle border for base
+                                strokeWidth={0.5}
+                                style={{
+                                    default: { outline: 'none' },
+                                    hover: { outline: 'none' }, // Base layer specific hover disabled/neutral?
+                                    pressed: { outline: 'none' }
+                                }}
+                            // No interaction on base layer
+                            />
+                        ))
+                    }
+                </Geographies>
+
+                {/* LAYER 2: Policy Data Overlay */}
+                {/* Only renders states where categorization exists. Holes reveal the base layer. */}
                 <Geographies geography={INDIA_TOPO_JSON}>
                     {({ geographies }) => {
-                        // console.log('Map Geometries Loaded:', geographies);
-                        if (!geographies || geographies.length === 0) return null;
-
                         return geographies.map((geo) => {
-                            // Robust name matching for various TopoJSON standards (Highcharts uses 'name')
-                            // console.log('Region Props:', geo.properties); // Debugging names
+                            // Robust name matching
+                            // console.log('Region Props:', geo.properties); 
                             const stateName = geo.properties.name || geo.properties.NAME_1 || geo.properties.st_nm || 'Unknown';
-                            // Normalize state name matching? 
-                            // Our backend uses 'Maharashtra', 'Karnataka'.
 
-                            // Check if we have data for this state
-                            // We need to map the TopoJSON name to our backend name.
-                            // I will assume direct match for now.
+                            const category = stateCategories[stateName];
 
-                            const category = stateCategories[stateName] || 'INSUFFICIENT_DATA';
+                            // FILTER: Only render if data exists. If undefined (Insufficient), skip to reveal Base Layer.
+                            if (!category || category === 'INSUFFICIENT_DATA') return null;
+
                             const def = CATEGORY_DEFINITIONS[category];
                             const isSelected = selectedState === stateName;
 
                             return (
                                 <Geography
-                                    key={geo.rsmKey}
+                                    key={`data-${geo.rsmKey}`}
                                     geography={geo}
                                     onClick={() => onStateClick(stateName)}
                                     style={{
                                         default: {
                                             fill: def.color,
                                             stroke: isSelected ? '#1a202c' : '#FFFFFF',
-                                            strokeWidth: isSelected ? 2 : 0.75,
+                                            strokeWidth: isSelected ? 2 : 1, // Distinct admin borders
                                             outline: 'none',
-                                            opacity: isSelected ? 1 : 0.9,
+                                            opacity: isSelected ? 1 : 0.95, // Slight transparency to blend? No, solid.
                                             transition: 'all 250ms'
                                         },
                                         hover: {
@@ -103,9 +122,14 @@ export function IndiaCasteCompositionMap({ stateCategories, selectedState, onSta
                 </Geographies>
             </ComposableMap>
 
-            {/* Fallback if map fails to load (visual only, actual handling is via library) */}
-            <div className="absolute top-2 right-2 text-[10px] text-gray-400">
-                Source: Datameet (Open Code)
+            {/* Explanatory Note / Source */}
+            <div className="absolute top-2 right-2 text-right">
+                <div className="text-[9px] text-[var(--color-charcoal-500)] bg-white/50 backdrop-blur-sm px-1.5 py-0.5 rounded leading-tight">
+                    Map outlines reflect sovereign claims.<br />Analytics reflect data availability.
+                </div>
+                <div className="text-[8px] text-gray-400 mt-0.5">
+                    Source: Datameet (Open Code)
+                </div>
             </div>
         </div >
     );
