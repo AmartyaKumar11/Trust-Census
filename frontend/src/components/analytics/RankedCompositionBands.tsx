@@ -12,6 +12,9 @@ function toRoundedRange(percentage: number): string {
 export function RankedCompositionBands({ composition }: RankedCompositionBandsProps) {
     const sorted = [...composition].sort((a, b) => b.percentage - a.percentage);
 
+    // Find absolute maximum for relative scaling
+    const maxVal = Math.max(...composition.map(c => c.percentage)) || 100;
+
     return (
         <div className="bg-white p-6 md:p-8 rounded-xl border border-[var(--color-navy-100)] shadow-sm">
             <div className="mb-6">
@@ -19,13 +22,17 @@ export function RankedCompositionBands({ composition }: RankedCompositionBandsPr
                     Caste Composition — Ranked Categories
                 </h3>
                 <p className="text-xs text-[var(--color-charcoal-500)] italic mt-1">
-                    Visual proportions based on noisy estimates. Ranges are approximate.
+                    Visual proportions and opacity reflect relative population share.
                 </p>
             </div>
 
             <div className="space-y-5">
                 {sorted.map((item) => {
                     const widthPct = Math.max(item.percentage, 1);
+                    // Calculate opacity relative to the largest group
+                    // Min opacity 0.4 (so it's distinguishable from empty), Max 1.0
+                    const relativeShare = item.percentage / maxVal;
+                    const opacity = 0.4 + (0.6 * relativeShare);
 
                     return (
                         <div key={item.category} className="group">
@@ -41,7 +48,10 @@ export function RankedCompositionBands({ composition }: RankedCompositionBandsPr
                             <div className="w-full bg-[var(--color-cream-200)] rounded-md h-3 overflow-hidden">
                                 <div
                                     className="h-full bg-[var(--color-navy-600)] rounded-md shadow-sm transition-all duration-1000 ease-out"
-                                    style={{ width: `${widthPct}%` }}
+                                    style={{
+                                        width: `${widthPct}%`,
+                                        opacity: opacity
+                                    }}
                                 >
                                     {/* Optical flare for aesthetics */}
                                     <div className="w-full h-full opacity-10 bg-gradient-to-r from-white/20 to-transparent" />
