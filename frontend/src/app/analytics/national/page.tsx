@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { RequireAuth } from '@/lib/authContext';
 import { AnalyticsHeader } from '@/components/analytics/AnalyticsHeader';
+import { AnalyticsNavigation } from '@/components/analytics/AnalyticsNavigation';
 import { PolicyDisclaimerBanner } from '@/components/analytics/PolicyDisclaimerBanner';
 import { Disclaimer } from '@/components/ui';
 
@@ -130,6 +131,24 @@ function NationalAnalyticsContent() {
             />
 
             <main className="container mx-auto px-4 md:px-6 space-y-8 -mt-6 relative z-10">
+
+                {/* Analytics Navigation - Direct Test */}
+                <div className="bg-red-100 border border-red-300 rounded-lg p-4 mb-6">
+                    <div className="text-red-800 font-bold">
+                        DEBUG: Direct navigation test
+                    </div>
+                    <div className="mt-2">
+                        <a 
+                            href="/analytics/policy-simulation" 
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        >
+                            Go to Policy Simulation
+                        </a>
+                    </div>
+                </div>
+
+                {/* Analytics Navigation */}
+                <AnalyticsNavigation />
 
                 {/* Section 1: National Policy Overview */}
                 <NationalPolicyOverview 
