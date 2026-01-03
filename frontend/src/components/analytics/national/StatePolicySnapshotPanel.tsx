@@ -8,7 +8,7 @@ interface StatePolicySnapshotPanelProps {
 }
 
 export function StatePolicySnapshotPanel({ stateName, category }: StatePolicySnapshotPanelProps) {
-    if (!stateName || !category) {
+    if (!stateName) {
         return (
             <Card variant="outlined" className="h-full flex items-center justify-center p-8 bg-[var(--color-cream-50)] border-dashed">
                 <div className="text-center text-[var(--color-charcoal-400)]">
@@ -17,6 +17,35 @@ export function StatePolicySnapshotPanel({ stateName, category }: StatePolicySna
                     </svg>
                     <p className="font-medium">Select a state on the map<br />to view policy snapshot</p>
                 </div>
+            </Card>
+        );
+    }
+
+    // Handle Insufficient Data explicitly
+    if (!category || category === 'INSUFFICIENT_DATA') {
+        return (
+            <Card variant="elevated" className="h-full border-l-4 border-gray-300">
+                <CardContent className="space-y-6">
+                    <div className="border-b border-[var(--color-navy-100)] pb-4">
+                        <h2 className="text-2xl font-serif font-bold text-[var(--color-navy-900)] mb-1">
+                            {stateName}
+                        </h2>
+                        <div className="flex items-center space-x-2">
+                            <span className="w-3 h-3 rounded-full bg-gray-300" />
+                            <span className="font-mono text-sm font-bold uppercase tracking-wide text-gray-500">
+                                Insufficient Data
+                            </span>
+                        </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                            Status Note
+                        </h4>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                            Aggregated survey data is not currently available or does not meet the sufficiency threshold for this region.
+                        </p>
+                    </div>
+                </CardContent>
             </Card>
         );
     }

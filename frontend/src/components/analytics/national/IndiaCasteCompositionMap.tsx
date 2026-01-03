@@ -113,7 +113,7 @@ export function IndiaCasteCompositionMap({ stateCategories, selectedState, onSta
                                 <Geography
                                     key={`data-${geo.rsmKey}`}
                                     geography={geo}
-                                    onClick={() => !isInsufficient && onStateClick(stateName)}
+                                    onClick={() => onStateClick(stateName)}
                                     style={{
                                         default: {
                                             fill: isInsufficient ? 'transparent' : def?.color, // Reveal base if no data
@@ -126,10 +126,10 @@ export function IndiaCasteCompositionMap({ stateCategories, selectedState, onSta
                                         hover: {
                                             fill: isInsufficient ? 'transparent' : def?.color,
                                             stroke: isInsufficient ? '#FFFFFF' : '#1a202c',
-                                            strokeWidth: isInsufficient ? 0.5 : 1.5,
-                                            outline: 'none', // No hover effect for insufficient data
+                                            strokeWidth: isInsufficient ? 1 : 1.5, // Slightly thicker on hover even for insufficient
+                                            outline: 'none',
                                             opacity: 1,
-                                            cursor: isInsufficient ? 'default' : 'pointer'
+                                            cursor: 'pointer' // Always pointer now
                                         },
                                         pressed: {
                                             fill: isInsufficient ? 'transparent' : def?.color,
