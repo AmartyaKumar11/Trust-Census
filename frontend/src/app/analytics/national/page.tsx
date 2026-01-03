@@ -1,48 +1,31 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth, RequireAuth } from '@/lib/authContext';
-import { getStateAggregates, type AnalyticsStateResponse, ApiError } from '@/lib/apiClient';
+import { useState, useEffect } from 'react';
+import { RequireAuth } from '@/lib/authContext';
 import { AnalyticsHeader } from '@/components/analytics/AnalyticsHeader';
 import { PolicyDisclaimerBanner } from '@/components/analytics/PolicyDisclaimerBanner';
 import { Disclaimer } from '@/components/ui';
 
-// New Components
-import { NationalPolicyContextBanner } from '@/components/analytics/national/NationalPolicyContextBanner';
-import { IndiaCasteCompositionMap } from '@/components/analytics/national/IndiaCasteCompositionMap';
-import { StatePolicySnapshotPanel } from '@/components/analytics/national/StatePolicySnapshotPanel';
-import { NationalPatternsPanel } from '@/components/analytics/national/NationalPatternsPanel';
+// New Policy Analytics Components
+import { NationalPolicyOverview } from '@/components/analytics/national/NationalPolicyOverview';
+import { IndiaPoliticalMap } from '@/components/analytics/national/IndiaPoliticalMap';
+import { StatePolicySnapshot } from '@/components/analytics/national/StatePolicySnapshot';
+import { NationalPatternsSummary } from '@/components/analytics/national/NationalPatternsSummary';
 import { DataCoverageNotice } from '@/components/analytics/national/DataCoverageNotice';
 
-// Logic
-import { classifyState, type PolicyCategory } from '@/lib/stateCategories';
-
-// List of supported states for the prototype.
-// In a real system, this might come from a metadata API or be exhaustive.
-const SUPPORTED_STATES = [
-    { code: 'MH', name: 'Maharashtra' },
-    { code: 'KA', name: 'Karnataka' },
-    { code: 'TN', name: 'Tamil Nadu' },
-    { code: 'UP', name: 'Uttar Pradesh' },
-    { code: 'WB', name: 'West Bengal' },
-    { code: 'GJ', name: 'Gujarat' },
-    { code: 'RJ', name: 'Rajasthan' },
-    { code: 'AP', name: 'Andhra Pradesh' },
-    { code: 'TG', name: 'Telangana' },
-    { code: 'DL', name: 'Delhi' },
-    { code: 'MP', name: 'Madhya Pradesh' },
-    { code: 'PB', name: 'Punjab' },
-    { code: 'HR', name: 'Haryana' },
-    { code: 'OD', name: 'Odisha' },
-    { code: 'BR', name: 'Bihar' },
-    // Add more as needed
-];
+// Policy Data Loader
+import { 
+  loadPolicyAnalytics, 
+  type PolicyAnalytics, 
+  type StatePolicy,
+  getNationalPolicySummary,
+  getDataCoverageSummary
+} from '@/lib/policyData';
 
 export default function NationalAnalyticsPage() {
     return (
         <RequireAuth
-            allowedRoles={['CENTRAL_POLICY_VIEWER']}
+            allowedRoles={['CENTRAL_POLICY_VIEWER', 'STATE_ANALYST']}
             fallback={<UnauthorizedMessage />}
         >
             <NationalAnalyticsContent />
@@ -54,172 +37,152 @@ function UnauthorizedMessage() {
     return (
         <div className="py-12 md:py-20 text-center">
             <h2 className="text-xl font-bold text-[var(--color-navy-800)]">Access Denied</h2>
-            <p className="text-[var(--color-charcoal-600)]">Only Central Policy Viewers can access this page.</p>
+            <p className="text-[var(--color-charcoal-600)]">
+                Only Central Policy Viewers and State Analysts can access national policy analytics.
+            </p>
         </div>
     );
 }
 
 function NationalAnalyticsContent() {
-    const { user } = useAuth();
+    // State management for policy analytics
+    const [policyData, setPolicyData] = useState<PolicyAnalytics | null>(null);
+    const [selectedStateCode, setSelectedStateCode] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // State
-    const [stateCategories, setStateCategories] = useState<Record<string, PolicyCategory>>({});
-    const [selectedState, setSelectedState] = useState<string | null>(null);
-    const [loadingStates, setLoadingStates] = useState<string[]>([]);
-    const [loadedCount, setLoadedCount] = useState(0);
-    const [errors, setErrors] = useState<string[]>([]);
-
-    // Use an effect to SEQUENTIALLY fetch state data for all supported states.
-    // This respects the "Rate-limited/Sequential" mandate.
+    // Load policy analytics on mount
     useEffect(() => {
-        let isMounted = true;
-
-        const fetchAllStates = async () => {
-            // Hardcoded map of API State Codes to Map State Names (TopoJSON keys)
-            const nameMap: Record<string, string> = {
-                'MH': 'Maharashtra',
-                'KA': 'Karnataka',
-                'TN': 'Tamil Nadu',
-                'UP': 'Uttar Pradesh',
-                'WB': 'West Bengal',
-                'GJ': 'Gujarat',
-                'RJ': 'Rajasthan',
-                'AP': 'Andhra Pradesh',
-                'TG': 'Telangana',
-                'DL': 'Delhi', // Map often uses Delhi or NCT of Delhi. 'Delhi' is usually safe in simpler maps.
-                'MP': 'Madhya Pradesh',
-                'PB': 'Punjab',
-                'HR': 'Haryana',
-                'OD': 'Odisha',
-                'BR': 'Bihar'
-            };
-
-            for (const state of SUPPORTED_STATES) {
-                if (!isMounted) break;
-
-                setLoadingStates(prev => [...prev, state.code]);
-
-                try {
-                    // National policy view derived from state-level policy aggregates.
-                    // This is not a raw national enumeration.
-                    const response = await getStateAggregates(state.code);
-
-                    if (isMounted && response.aggregates) {
-                        const category = classifyState(response.aggregates);
-                        const mapName = nameMap[state.code] || state.name;
-
-                        setStateCategories(prev => ({
-                            ...prev,
-                            [mapName]: category
-                        }));
-                    }
-                } catch (err) {
-                    // Mark failure as Insufficient
-                    if (isMounted) {
-                        const mapName = nameMap[state.code] || state.name;
-                        setStateCategories(prev => ({
-                            ...prev,
-                            [mapName]: 'INSUFFICIENT_DATA'
-                        }));
-                        // console.warn(`Failed to fetch ${state.code}`, err);
-                    }
-                } finally {
-                    if (isMounted) {
-                        setLoadedCount(prev => prev + 1);
-                        setLoadingStates(prev => prev.filter(c => c !== state.code));
-                    }
-                }
-
-                // Small delay to be polite to backend (simulating sequential processing)
-                await new Promise(r => setTimeout(r, 50));
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                const data = await loadPolicyAnalytics();
+                setPolicyData(data);
+                setError(null);
+            } catch (err) {
+                console.error('Failed to load policy analytics:', err);
+                setError('Unable to load national policy analytics. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchAllStates();
+        loadData();
+    }, []);
 
-        return () => { isMounted = false; };
-    }, []); // Run once on mount
+    // Handle state selection from map
+    const handleStateSelect = (stateCode: string) => {
+        setSelectedStateCode(stateCode);
+    };
 
-    // Compute Derived Summaries
-    const patternCounts = useMemo(() => {
-        const counts: Record<PolicyCategory, number> = {
-            'OBC_PREDOMINANT': 0,
-            'SC_ST_PREDOMINANT': 0,
-            'MIXED_COMPOSITION': 0,
-            'HIGHLY_DIVERSE': 0,
-            'INSUFFICIENT_DATA': 0
-        };
+    // Get selected state data
+    const selectedState: StatePolicy | null = 
+        policyData && selectedStateCode 
+            ? policyData.states[selectedStateCode] || null 
+            : null;
 
-        Object.values(stateCategories).forEach(cat => {
-            if (counts[cat] !== undefined) counts[cat]++;
-        });
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[var(--color-cream-50)] pb-20">
+                <PolicyDisclaimerBanner />
+                <AnalyticsHeader
+                    title="National Policy Analytics"
+                    subtitle="Loading urbanisation and demographic policy insights..."
+                />
+                <div className="container mx-auto px-4 md:px-6 py-12 text-center">
+                    <div className="animate-pulse text-[var(--color-charcoal-600)]">
+                        Loading policy analytics...
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
-        return counts;
-    }, [stateCategories]);
+    // Error state
+    if (error || !policyData) {
+        return (
+            <div className="min-h-screen bg-[var(--color-cream-50)] pb-20">
+                <PolicyDisclaimerBanner />
+                <AnalyticsHeader
+                    title="National Policy Analytics"
+                    subtitle="Error loading policy data"
+                />
+                <div className="container mx-auto px-4 md:px-6 py-12 text-center">
+                    <div className="text-[var(--color-error-600)]">
+                        {error || 'Unable to load policy analytics'}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
-    const insufficientList = useMemo(() => {
-        return Object.entries(stateCategories)
-            .filter(([_, cat]) => cat === 'INSUFFICIENT_DATA')
-            .map(([name]) => name);
-    }, [stateCategories]);
-
+    // Get summary data
+    const nationalSummary = getNationalPolicySummary(policyData);
+    const coverageSummary = getDataCoverageSummary(policyData);
 
     return (
         <div className="min-h-screen bg-[var(--color-cream-50)] pb-20">
             <PolicyDisclaimerBanner />
             <AnalyticsHeader
-                title="National Policy Patterns"
-                subtitle="Macro-level categorical analysis of caste composition across states"
+                title="National Policy Analytics"
+                subtitle="Urbanisation & Demographic Policy Insights for India"
             />
 
             <main className="container mx-auto px-4 md:px-6 space-y-8 -mt-6 relative z-10">
 
-                {/* Section 1: Context Banner */}
-                <NationalPolicyContextBanner />
+                {/* Section 1: National Policy Overview */}
+                <NationalPolicyOverview 
+                    summary={nationalSummary}
+                    coverage={coverageSummary}
+                    metadata={policyData.metadata}
+                />
 
-                {/* Main Interactive Area: Map + Snapshot */}
+                {/* Section 2: Interactive Map and State Snapshot */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-
-                    {/* Section 2: Map (Columns 1-7) */}
-                    <div className="lg:col-span-7 h-full min-h-[500px]">
-                        <div className="bg-white rounded-xl border border-[var(--color-navy-100)] p-1 h-full shadow-sm">
-                            <div className="mb-2 px-4 pt-4 flex justify-between items-center">
-                                <h3 className="font-serif font-bold text-[var(--color-navy-900)]">National Categorical Map</h3>
-                                {loadedCount < SUPPORTED_STATES.length && (
-                                    <span className="text-xs font-mono text-[var(--color-charcoal-500)] animate-pulse">
-                                        Synthesizing... {loadedCount}/{SUPPORTED_STATES.length}
-                                    </span>
-                                )}
+                    
+                    {/* Political Map (Columns 1-7) */}
+                    <div className="lg:col-span-7 h-full min-h-[600px]">
+                        <div className="bg-white rounded-xl border border-[var(--color-navy-100)] p-6 h-full shadow-sm">
+                            <div className="mb-4">
+                                <h3 className="font-serif font-bold text-lg text-[var(--color-navy-900)]">
+                                    India - Urbanisation Categories
+                                </h3>
+                                <p className="text-sm text-[var(--color-charcoal-600)] mt-1">
+                                    Click on any state to view policy insights
+                                </p>
                             </div>
-
-                            <IndiaCasteCompositionMap
-                                stateCategories={stateCategories}
-                                selectedState={selectedState}
-                                onStateClick={setSelectedState}
+                            
+                            <IndiaPoliticalMap
+                                policyData={policyData}
+                                selectedStateCode={selectedStateCode}
+                                onStateSelect={handleStateSelect}
                             />
                         </div>
                     </div>
 
-                    {/* Section 3: Snapshot Panel (Columns 8-12) */}
-                    <div className="lg:col-span-5 h-full min-h-[500px]">
-                        <StatePolicySnapshotPanel
-                            stateName={selectedState}
-                            category={selectedState ? stateCategories[selectedState] : null}
+                    {/* State Policy Snapshot (Columns 8-12) */}
+                    <div className="lg:col-span-5 h-full min-h-[600px]">
+                        <StatePolicySnapshot
+                            stateData={selectedState}
+                            stateCode={selectedStateCode}
                         />
                     </div>
                 </div>
 
-                {/* Section 4: Patterns Summary */}
-                <div>
-                    <h3 className="font-serif text-lg font-bold text-[var(--color-navy-900)] mb-4 px-1">
-                        National Pattern Summary
-                    </h3>
-                    <NationalPatternsPanel counts={patternCounts} />
-                </div>
+                {/* Section 3: National Patterns Summary */}
+                <NationalPatternsSummary 
+                    patterns={policyData.national_patterns}
+                    statesData={policyData.states}
+                />
 
-                {/* Section 5: Data Coverage */}
-                <DataCoverageNotice insufficientStates={insufficientList} />
+                {/* Section 4: Data Coverage Notice */}
+                <DataCoverageNotice 
+                    dataGaps={policyData.national_patterns.data_gaps_states}
+                    coverage={coverageSummary}
+                />
 
+                {/* Privacy Disclaimer */}
                 <div className="mt-12 text-center pb-8">
                     <Disclaimer variant="privacy" />
                 </div>
