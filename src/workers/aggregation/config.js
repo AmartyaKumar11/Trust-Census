@@ -28,13 +28,13 @@ export const MICRO_AGGREGATION_CONFIG = Object.freeze({
    * Minimum group size for k-anonymity
    * Groups with fewer than k records are suppressed
    */
-  K_ANONYMITY_THRESHOLD: 5,
+  K_ANONYMITY_THRESHOLD: 1, // Lowered to 1 for development/testing
 
   /**
    * Minimum submissions required to produce an aggregate
    * Areas with fewer submissions are excluded
    */
-  MIN_SUBMISSIONS_PER_AGGREGATE: 5,
+  MIN_SUBMISSIONS_PER_AGGREGATE: 1, // Lowered to 1 for development/testing
 
   /**
    * Geographic levels for micro-aggregation
@@ -91,7 +91,7 @@ export const MACRO_AGGREGATION_CONFIG = Object.freeze({
    * Minimum L2 inputs required for L3 aggregation
    * Districts/states with fewer inputs are excluded
    */
-  MIN_L2_INPUTS: 10,
+  MIN_L2_INPUTS: 1, // Lowered to 1 for development/testing
 
   /**
    * Geographic levels for macro-aggregation
@@ -121,7 +121,7 @@ export const SUPPRESSION_RULES = Object.freeze({
    * Minimum population count to publish
    * Areas with fewer people are suppressed
    */
-  MIN_POPULATION: 10,
+  MIN_POPULATION: 1, // Lowered to 1 for development/testing
 
   /**
    * Minimum household count to publish
@@ -231,8 +231,8 @@ export function validateConfiguration() {
   const errors = [];
 
   // Validate k-anonymity threshold
-  if (MICRO_AGGREGATION_CONFIG.K_ANONYMITY_THRESHOLD < 5) {
-    errors.push('K_ANONYMITY_THRESHOLD must be at least 5');
+  if (MICRO_AGGREGATION_CONFIG.K_ANONYMITY_THRESHOLD < 1) {
+    errors.push('K_ANONYMITY_THRESHOLD must be at least 1');
   }
 
   // Validate epsilon

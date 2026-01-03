@@ -1,4 +1,5 @@
 export type PolicyCategory =
+    | 'GENERAL_PREDOMINANT'
     | 'OBC_PREDOMINANT'
     | 'SC_ST_PREDOMINANT'
     | 'MIXED_COMPOSITION'
@@ -13,6 +14,16 @@ export interface PolicyCategorySemantics {
 }
 
 export const CATEGORY_DEFINITIONS: Record<PolicyCategory, PolicyCategorySemantics> = {
+    'GENERAL_PREDOMINANT': {
+        label: 'General Predominant',
+        color: '#C0392B', // Muted Red
+        description: 'General Category populations form the largest demographic block according to available aggregates.',
+        direction: [
+            'Maintain economic criteria (EWS) focus',
+            'Ensure competitive merit-based access',
+            'Review reservation caps relative to composition'
+        ]
+    },
     'OBC_PREDOMINANT': {
         label: 'OBC Predominant',
         color: '#E67E22', // Muted Orange
@@ -88,15 +99,9 @@ export function classifyState(composition: { category: string; populationEstimat
     const sc_st = sc + st;
 
     // Relative Dominance Logic
-    // 1. Predominance: One group > 1.5x the next largest?
-    // Or just simple "Clearly exceeds".
-
-    // Heuristic 1: OBC Predominance
-    // If OBC is the largest AND > 40% (Hard threshold implies dominance in 5-party system)
-    // Relative: If OBC > (Next Highest + 5%)
-
     // Using robust operational definitions for "Policy Grade":
 
+    if (general > 40) return 'GENERAL_PREDOMINANT';
     if (obc > 40) return 'OBC_PREDOMINANT';
     if (sc_st > 40) return 'SC_ST_PREDOMINANT';
 

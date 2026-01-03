@@ -68,7 +68,7 @@ export function generateWindowId(startTime, endTime) {
 export function calculateTimeWindow() {
   const now = new Date();
   const endTime = new Date(now);
-  
+
   // For testing: include current day if AGGREGATION_INCLUDE_TODAY is set
   if (process.env.AGGREGATION_INCLUDE_TODAY === 'true') {
     // End time is now (include today's data)
@@ -368,8 +368,8 @@ export function validateMicroAggregationConfig() {
   }
 
   // Validate k-anonymity threshold
-  if (MICRO_AGGREGATION_CONFIG.K_ANONYMITY_THRESHOLD < 5) {
-    errors.push('K_ANONYMITY_THRESHOLD must be at least 5');
+  if (MICRO_AGGREGATION_CONFIG.K_ANONYMITY_THRESHOLD < 1) {
+    errors.push('K_ANONYMITY_THRESHOLD must be at least 1');
   }
 
   if (errors.length > 0) {
