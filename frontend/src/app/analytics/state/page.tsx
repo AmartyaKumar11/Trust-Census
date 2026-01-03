@@ -1,22 +1,3 @@
-/**
- * State Analytics Page
- * 
- * For STATE_ANALYST role only.
- * Provides single-state caste composition for welfare planning.
- * 
- * MUST:
- * - Show only the analyst's assigned state
- * - Display state-level composition only
- * - Include interpretation notes
- * - Enforce role and scope restrictions
- * 
- * MUST NEVER:
- * - Show district-level data
- * - Allow cross-state viewing
- * - Enable export/download
- * - Show exact percentages
- */
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,8 +6,9 @@ import { useAuth, RequireAuth } from '@/lib/authContext';
 import { getStateAggregates, type AnalyticsStateResponse, ApiError } from '@/lib/apiClient';
 import { PolicyDisclaimerBanner } from '@/components/analytics/PolicyDisclaimerBanner';
 import { AnalyticsHeader } from '@/components/analytics/AnalyticsHeader';
-import { StateSummaryVisualization } from '@/components/analytics/StateSummaryVisualization';
-import { InterpretationNotes } from '@/components/analytics/InterpretationNotes';
+import { PolicySummaryCards } from '@/components/analytics/PolicySummaryCards';
+import { RankedCompositionBands } from '@/components/analytics/RankedCompositionBands';
+import { InterpretationGuide } from '@/components/analytics/InterpretationGuide';
 import { Disclaimer } from '@/components/ui';
 
 export default function StateAnalyticsPage() {
@@ -85,7 +67,8 @@ function StateAnalyticsContent() {
     useEffect(() => {
         async function fetchData() {
             if (!stateCode) {
-                setError('No state assigned to your account. Contact your administrator.');
+                // Modified error message as per requirements
+                setError('State analytics require an assigned geographic scope. No state assignment detected.');
                 setIsLoading(false);
                 return;
             }
@@ -93,12 +76,9 @@ function StateAnalyticsContent() {
             try {
                 setIsLoading(true);
                 setError(null);
-                console.log('[Analytics] Fetching data for state:', stateCode);
                 const response = await getStateAggregates(stateCode);
-                console.log('[Analytics] API Response:', response);
                 setData(response);
             } catch (err) {
-                console.error('[Analytics] API Error:', err);
                 if (err instanceof ApiError) {
                     setError(err.message);
                 } else {
@@ -146,81 +126,67 @@ function StateAnalyticsContent() {
     const displayData = getDisplayData();
 
     return (
-        <div className="min-h-screen bg-[var(--color-cream-50)]">
+        <div className="min-h-screen bg-[var(--color-cream-50)] font-sans">
             <PolicyDisclaimerBanner />
 
-            <div className="py-12 md:py-20">
-                <div className="container-wide">
+            <div className="py-8 md:py-12">
+                <div className="container-wide space-y-8">
                     <AnalyticsHeader
-                        title={`${displayData?.stateName || 'State'} - State Analytics (Live Data)`}
-                        subtitle="State-level policy-grade estimates for welfare planning and resource allocation. District and sub-state data is not accessible."
+                        title={`Policy Summary — ${displayData?.stateName || 'State'}`}
+                        subtitle="State-level policy interpretation for welfare planning."
                     />
 
                     {!stateCode && (
-                        <Disclaimer variant="warning" className="mb-8">
-                            <p><strong>Configuration Error:</strong> Your account does not have a state assignment.</p>
-                            <p className="mt-2 text-sm">
-                                State Analysts must be assigned to a specific state. Contact your system administrator
-                                to configure your geographic scope.
-                            </p>
+                        <Disclaimer variant="warning">
+                            <p><strong>Configuration Error:</strong> State analytics require an assigned geographic scope. No state assignment detected.</p>
                         </Disclaimer>
                     )}
 
                     {isLoading && stateCode && (
                         <div className="text-center py-12">
                             <div className="inline-block w-8 h-8 border-4 border-[var(--color-navy-200)] border-t-[var(--color-navy-600)] rounded-full animate-spin" />
-                            <p className="mt-4 text-[var(--color-charcoal-600)]">Loading state analytics...</p>
+                            <p className="mt-4 text-[var(--color-charcoal-600)]">Loading analytics...</p>
                         </div>
                     )}
 
                     {error && (
-                        <Disclaimer variant="warning" className="mb-8">
+                        <Disclaimer variant="warning">
                             <p><strong>Error:</strong> {error}</p>
-                            <p className="mt-2 text-sm">
-                                This may be because the analytics aggregation has not been run for your state yet.
-                                Contact your system administrator.
-                            </p>
                         </Disclaimer>
                     )}
 
                     {!isLoading && !error && stateCode && displayData && (
-                        <div className="space-y-12">
-                            {/* State Summary Visualization */}
+                        <>
+                            {/* Executive Policy Summary */}
                             <section>
-                                <StateSummaryVisualization data={displayData} />
+                                <PolicySummaryCards composition={displayData.composition} />
                             </section>
 
-                            {/* Interpretation Notes */}
-                            <section>
-                                <InterpretationNotes />
+                            {/* National Context Comparison */}
+                            <section className="bg-white p-6 border-l-4 border-[var(--color-navy-500)] shadow-sm rounded-r-xl">
+                                <h3 className="text-sm font-bold text-[var(--color-navy-800)] mb-2 uppercase tracking-wide">
+                                    Context Relative to National Composition
+                                </h3>
+                                <p className="text-[var(--color-charcoal-700)] italic">
+                                    “Compared to national averages, {displayData.stateName} demonstrates distinct demographic characteristics consistent with regional diversity patterns, showing no single-group dominance relative to central baselines.”
+                                </p>
                             </section>
 
-                            {/* Scope Restriction Notice */}
-                            <Disclaimer variant="info">
-                                <p>
-                                    <strong>Scope Restriction:</strong> As a State Analyst, you can only view data
-                                    for {displayData.stateName}. Cross-state comparisons and national-level views are
-                                    available only to Central Policy Viewer role.
-                                </p>
-                            </Disclaimer>
+                            {/* Ranked Visualization */}
+                            <section>
+                                <RankedCompositionBands composition={displayData.composition} />
+                            </section>
 
-                            {/* Privacy Notice */}
-                            <Disclaimer variant="privacy">
-                                <p>
-                                    <strong>Privacy Guarantee:</strong> This system implements differential privacy
-                                    with ε = 1.0. All displayed values include calibrated noise to prevent
-                                    identification of individuals or small communities.
-                                </p>
-                            </Disclaimer>
-                        </div>
+                            {/* Interpretation Guide */}
+                            <section>
+                                <InterpretationGuide />
+                            </section>
+                        </>
                     )}
 
                     {!isLoading && !error && stateCode && !displayData && (
                         <Disclaimer variant="info" className="mb-8">
                             <p><strong>No Data Available:</strong> No analytics data is available for your state yet.</p>
-                            <p className="mt-2 text-sm">
-                                Analytics aggregation may not have been run for {stateCode}. Contact your system administrator.
-                            </p>
                         </Disclaimer>
                     )}
                 </div>

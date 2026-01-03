@@ -12,5 +12,8 @@ export { IndiaCasteMap } from './IndiaCasteMap';
 export { StateSummaryDrawer } from './StateSummaryDrawer';
 export { NationalSummaryCards } from './NationalSummaryCards';
 export { StateSummaryVisualization } from './StateSummaryVisualization';
+export { PolicySummaryCards } from './PolicySummaryCards';
+export { RankedCompositionBands } from './RankedCompositionBands';
+export { InterpretationGuide } from './InterpretationGuide';
 
 export type { DiversityCategory } from './IndiaCasteMap';
