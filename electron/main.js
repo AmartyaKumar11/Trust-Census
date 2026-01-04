@@ -106,22 +106,63 @@ async function waitForFrontend(maxAttempts = 30) {
 }
 
 /**
+ * Get the correct paths for resources based on whether app is packaged
+ */
+function getResourcePaths() {
+    const isDev = !app.isPackaged;
+
+    if (isDev) {
+        // Development mode
+        return {
+            rootDir: path.join(__dirname, '..'),
+            frontendDir: path.join(__dirname, '../frontend'),
+            backendEntry: path.join(__dirname, '../src/server.js'),
+            frontendEntry: path.join(__dirname, '../frontend/.next/standalone/server.js')
+        };
+    } else {
+        // Production mode (packaged)
+        const resourcesPath = process.resourcesPath;
+        return {
+            rootDir: path.join(resourcesPath, 'app'),
+            frontendDir: path.join(resourcesPath, 'app/frontend'),
+            backendEntry: path.join(resourcesPath, 'app/backend/src/server.js'),
+            frontendEntry: path.join(resourcesPath, 'app/frontend/server.js')
+        };
+    }
+}
+
+/**
  * Start backend server
  */
 function startBackend() {
     console.log('Starting backend server...');
 
-    const rootDir = path.join(__dirname, '..');
+    const isDev = !app.isPackaged;
+    const paths = getResourcePaths();
 
-    backendProcess = spawn('npm', ['run', 'dev'], {
-        cwd: rootDir,
-        env: process.env,
-        stdio: 'inherit',
-        shell: true
-    });
+    if (isDev) {
+        // Development mode - use npm
+        backendProcess = spawn('npm', ['run', 'dev'], {
+            cwd: paths.rootDir,
+            env: process.env,
+            stdio: 'inherit',
+            shell: true
+        });
+    } else {
+        // Production mode - direct Node execution
+        backendProcess = spawn(process.execPath, [paths.backendEntry], {
+            cwd: paths.rootDir,
+            env: process.env,
+            stdio: 'inherit'
+        });
+    }
 
     backendProcess.on('error', (err) => {
         console.error('Failed to start backend:', err);
+        dialog.showErrorBox(
+            'Backend Startup Error',
+            `Failed to start backend server: ${err.message}`
+        );
     });
 
     backendProcess.on('close', (code) => {
@@ -135,17 +176,35 @@ function startBackend() {
 function startFrontend() {
     console.log('Starting frontend server...');
 
-    const frontendDir = path.join(__dirname, '../frontend');
+    const isDev = !app.isPackaged;
+    const paths = getResourcePaths();
 
-    frontendProcess = spawn('npm', ['run', 'dev'], {
-        cwd: frontendDir,
-        env: process.env,
-        stdio: 'inherit',
-        shell: true
-    });
+    if (isDev) {
+        // Development mode - use npm
+        frontendProcess = spawn('npm', ['run', 'dev'], {
+            cwd: paths.frontendDir,
+            env: process.env,
+            stdio: 'inherit',
+            shell: true
+        });
+    } else {
+        // Production mode - use Next.js standalone server
+        frontendProcess = spawn(process.execPath, [paths.frontendEntry], {
+            cwd: paths.frontendDir,
+            env: {
+                ...process.env,
+                PORT: String(FRONTEND_PORT)
+            },
+            stdio: 'inherit'
+        });
+    }
 
     frontendProcess.on('error', (err) => {
         console.error('Failed to start frontend:', err);
+        dialog.showErrorBox(
+            'Frontend Startup Error',
+            `Failed to start frontend server: ${err.message}`
+        );
     });
 
     frontendProcess.on('close', (code) => {

@@ -16,10 +16,10 @@ import { PolicyImplicationPanel } from '@/components/analytics/simulation/Policy
 import { SimulationSafeguards } from '@/components/analytics/simulation/SimulationSafeguards';
 
 // Data and Rules
-import { 
-  loadPolicyAnalytics, 
-  type PolicyAnalytics, 
-  type StatePolicy 
+import {
+    loadPolicyAnalytics,
+    type PolicyAnalytics,
+    type StatePolicy
 } from '@/lib/policyData';
 
 export default function PolicySimulationPage() {
@@ -41,24 +41,24 @@ function UnauthorizedMessage() {
                 title="Policy Simulation"
                 subtitle="Access Restricted - National Policy Planning Tool"
             />
-            
+
             <main className="container mx-auto px-4 md:px-6 py-12">
                 {/* 403-Style Access Denied UI */}
                 <div className="max-w-2xl mx-auto text-center space-y-8">
-                    
+
                     {/* Access Denied Icon */}
                     <div className="w-24 h-24 bg-[var(--color-error-100)] rounded-full flex items-center justify-center mx-auto">
-                        <svg 
-                            className="w-12 h-12 text-[var(--color-error-600)]" 
-                            fill="none" 
-                            stroke="currentColor" 
+                        <svg
+                            className="w-12 h-12 text-[var(--color-error-600)]"
+                            fill="none"
+                            stroke="currentColor"
                             viewBox="0 0 24 24"
                         >
-                            <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={1.5} 
-                                d="M12 15v2m0 0v2m0-2h2m-2 0H10m12-6a9 9 0 11-18 0 9 9 0 0118 0z" 
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M12 15v2m0 0v2m0-2h2m-2 0H10m12-6a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
                     </div>
@@ -84,7 +84,7 @@ function UnauthorizedMessage() {
                                     Role Authorization Required
                                 </h3>
                                 <p className="text-sm text-[var(--color-error-700)] leading-relaxed">
-                                    This policy simulation tool is intended exclusively for national-level 
+                                    This policy simulation tool is intended exclusively for national-level
                                     policy planning and requires <strong>CENTRAL_POLICY_VIEWER</strong> role authorization.
                                 </p>
                                 <div className="bg-white rounded-lg p-4 border border-[var(--color-error-200)]">
@@ -108,9 +108,9 @@ function UnauthorizedMessage() {
                                     Constitutional Separation of Roles
                                 </h3>
                                 <p className="text-sm text-[var(--color-charcoal-700)] leading-relaxed">
-                                    Access restrictions preserve constitutional separation of governance roles 
-                                    and prevent misuse of macro-level policy reasoning tools. This ensures 
-                                    appropriate use within the framework of democratic accountability and 
+                                    Access restrictions preserve constitutional separation of governance roles
+                                    and prevent misuse of macro-level policy reasoning tools. This ensures
+                                    appropriate use within the framework of democratic accountability and
                                     institutional responsibility.
                                 </p>
                             </div>
@@ -120,7 +120,7 @@ function UnauthorizedMessage() {
                     {/* Contact Information */}
                     <div className="bg-[var(--color-cream-100)] border border-[var(--color-charcoal-200)] rounded-lg p-4">
                         <p className="text-sm text-[var(--color-charcoal-700)]">
-                            For role authorization requests, contact your system administrator or 
+                            For role authorization requests, contact your system administrator or
                             the appropriate constitutional authority responsible for national policy planning access.
                         </p>
                     </div>
@@ -131,9 +131,10 @@ function UnauthorizedMessage() {
 }
 
 interface SimulationScenario {
-  urbanisation?: string;
-  density?: string;
-  sex_ratio?: string;
+    [key: string]: string | undefined;
+    urban?: string | undefined;
+    density?: string | undefined;
+    sex_ratio?: string | undefined;
 }
 
 function PolicySimulationContent() {
@@ -182,9 +183,9 @@ function PolicySimulationContent() {
     };
 
     // Get selected state data
-    const selectedState: StatePolicy | null = 
-        policyData && selectedStateCode 
-            ? policyData.states[selectedStateCode] || null 
+    const selectedState: StatePolicy | null =
+        policyData && selectedStateCode
+            ? policyData.states[selectedStateCode] || null
             : null;
 
     // Loading state

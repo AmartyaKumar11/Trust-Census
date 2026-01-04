@@ -10,7 +10,10 @@
     "migrate": "node src/db/migrate.js",
     "bootstrap": "node src/scripts/bootstrap.js",
     "electron:dev": "cd electron && npm start",
-    "electron:install": "cd electron && npm install"
+    "electron:install": "cd electron && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "build:electron": "npm run build:frontend && cd electron && npm run build",
+    "build:win": "npm run build:electron"
   },
   "keywords": [
     "census",

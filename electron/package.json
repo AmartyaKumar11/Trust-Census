@@ -5,7 +5,9 @@
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "dev": "electron . --trace-warnings"
+        "dev": "electron . --trace-warnings",
+        "build": "electron-builder --win",
+        "build:win": "electron-builder --win"
     },
     "keywords": [
         "electron",
@@ -15,6 +17,56 @@
     "author": "Trust-Census Team",
     "license": "UNLICENSED",
     "devDependencies": {
-        "electron": "^28.0.0"
+        "electron": "^28.0.0",
+        "electron-builder": "^26.0.12"
+    },
+    "build": {
+        "appId": "org.trustfirst.census",
+        "productName": "Trust-First Census System",
+        "win": {
+            "target": "portable"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "package.json",
+            "!node_modules"
+        ],
+        "extraResources": [
+            {
+                "from": "../src",
+                "to": "app/backend/src",
+                "filter": [
+                    "**/*",
+                    "!**/*.test.js"
+                ]
+            },
+            {
+                "from": "../package.json",
+                "to": "app/backend/package.json"
+            },
+            {
+                "from": "../frontend/.next/standalone",
+                "to": "app/frontend"
+            },
+            {
+                "from": "../frontend/public",
+                "to": "app/frontend/public"
+            },
+            {
+                "from": "../frontend/.next/static",
+                "to": "app/frontend/.next/static"
+            }
+        ],
+        "directories": {
+            "output": "dist"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Trust-First Census System"
+        }
     }
 }
