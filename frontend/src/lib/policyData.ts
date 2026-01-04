@@ -44,6 +44,7 @@ export interface StatePolicy {
   csv_code: string;
   database_code: string;
   urban_category: 'Highly Urbanized' | 'Moderately Urbanized' | 'Semi-Rural' | 'Predominantly Rural' | 'Insufficient Data';
+  caste_category?: string; // Added for Caste Composition Map
   density_category: 'Very High Density' | 'High Density' | 'Medium Density' | 'Low Density';
   sex_ratio_interpretation: string;
   policy_interpretation: string;
@@ -93,20 +94,20 @@ export const URBAN_CATEGORY_DESCRIPTIONS = {
 export async function loadPolicyAnalytics(): Promise<PolicyAnalytics> {
   try {
     const response = await fetch('/data/india_state_policy_analytics.json');
-    
+
     if (!response.ok) {
       throw new Error(`Failed to load policy data: ${response.status}`);
     }
-    
+
     const data: PolicyAnalytics = await response.json();
-    
+
     // Validate data structure
     if (!data.metadata || !data.states || !data.national_patterns || !data.state_code_mapping) {
       throw new Error('Invalid policy data structure');
     }
-    
+
     return data;
-    
+
   } catch (error) {
     console.error('Policy data loading failed:', error);
     throw new Error('Unable to load national policy analytics. Please ensure the data file is available.');
@@ -120,17 +121,17 @@ export function getStatePolicy(data: PolicyAnalytics, stateCode: string): StateP
   // Try direct lookup first (CSV numeric format)
   const normalizedCode = stateCode.padStart(2, '0');
   let state = data.states[normalizedCode];
-  
+
   if (state) {
     return state;
   }
-  
+
   // Try reverse lookup (database alphabetic format)
   const numericCode = data.state_code_mapping.alpha_to_numeric[stateCode.toUpperCase()];
   if (numericCode) {
     return data.states[numericCode] || null;
   }
-  
+
   return null;
 }
 
@@ -154,7 +155,7 @@ export function databaseToCsv(data: PolicyAnalytics, databaseCode: string): stri
  */
 export function getStatesByUrbanCategory(data: PolicyAnalytics): Record<string, StatePolicy[]> {
   const categorized: Record<string, StatePolicy[]> = {};
-  
+
   Object.values(data.states).forEach(state => {
     const category = state.urban_category;
     if (!categorized[category]) {
@@ -162,7 +163,7 @@ export function getStatesByUrbanCategory(data: PolicyAnalytics): Record<string, 
     }
     categorized[category].push(state);
   });
-  
+
   return categorized;
 }
 
@@ -179,7 +180,7 @@ export function getDataCoverageSummary(data: PolicyAnalytics): {
   const dataGaps = data.national_patterns.data_gaps_count;
   const completeData = totalStates - dataGaps;
   const coveragePercentage = ((completeData / totalStates) * 100).toFixed(0);
-  
+
   return {
     total_states: totalStates,
     complete_data: completeData,
@@ -195,17 +196,17 @@ export function getDataCoverageSummary(data: PolicyAnalytics): {
 export function validatePrivacyConstraints(data: PolicyAnalytics): boolean {
   // Check that no raw percentages are in the data
   const stateEntries = Object.values(data.states);
-  
+
   for (const state of stateEntries) {
     // Ensure only categorical data is present
     if (typeof state.urban_category !== 'string' ||
-        typeof state.density_category !== 'string' ||
-        typeof state.sex_ratio_interpretation !== 'string' ||
-        typeof state.policy_interpretation !== 'string') {
+      typeof state.density_category !== 'string' ||
+      typeof state.sex_ratio_interpretation !== 'string' ||
+      typeof state.policy_interpretation !== 'string') {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -218,11 +219,11 @@ export function getNationalPolicySummary(data: PolicyAnalytics): {
   data_status: string;
 } {
   const patterns = data.national_patterns;
-  
+
   return {
     title: 'National Urbanisation & Demographic Policy Overview',
     insights: patterns.summary_insights,
-    data_status: patterns.data_gaps_count > 0 
+    data_status: patterns.data_gaps_count > 0
       ? `Data collection priorities identified in ${patterns.data_gaps_count} regions`
       : 'Complete national data coverage achieved'
   };
@@ -233,7 +234,7 @@ export function getNationalPolicySummary(data: PolicyAnalytics): {
  */
 export function getStateCodeMappingInfo(data: PolicyAnalytics): {
   total_mappings: number;
-  sample_mappings: Array<{csv: string, database: string, state_name: string}>;
+  sample_mappings: Array<{ csv: string, database: string, state_name: string }>;
   mapping_description: string;
 } {
   const sampleStates = ['27', '33', '29', '01']; // MH, TN, KA, JK
@@ -245,7 +246,7 @@ export function getStateCodeMappingInfo(data: PolicyAnalytics): {
       state_name: state?.state_name || 'UNKNOWN'
     };
   }).filter(mapping => mapping.database !== 'UNKNOWN');
-  
+
   return {
     total_mappings: Object.keys(data.state_code_mapping.numeric_to_alpha).length,
     sample_mappings: sampleMappings,

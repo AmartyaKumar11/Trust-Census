@@ -29,7 +29,16 @@ export function AnalyticsNavigation() {
         return null;
     }
 
-    const navigationItems = [
+    interface NavigationItem {
+        name: string;
+        href: string;
+        description?: string;
+        roles: string[];
+        restricted?: boolean;
+        label?: string;
+    }
+
+    const navigationItems: NavigationItem[] = [
         {
             name: 'National Analytics',
             href: '/analytics/national',
@@ -41,12 +50,13 @@ export function AnalyticsNavigation() {
             href: '/analytics/policy-simulation',
             description: 'Categorical scenario reasoning tool',
             roles: ['CENTRAL_POLICY_VIEWER'], // Restricted to CENTRAL_POLICY_VIEWER only
-            restricted: true
+            restricted: true,
+            label: 'new'
         }
     ];
 
     // Filter items based on user role
-    const availableItems = navigationItems.filter(item => 
+    const availableItems = navigationItems.filter(item =>
         item.roles.includes(user.role)
     );
 
@@ -55,13 +65,34 @@ export function AnalyticsNavigation() {
         return null; // Don't show navigation if only one item available for non-CENTRAL_POLICY_VIEWER
     }
 
-export function AnalyticsNavigation() {
-    // Simple test - always render something for debugging
     return (
-        <div className="bg-red-100 border border-red-300 rounded-lg p-4 mb-6">
-            <div className="text-red-800 font-bold">
-                DEBUG: AnalyticsNavigation component is rendering
-            </div>
-        </div>
+        <nav className="flex items-center space-x-1 bg-white p-1 rounded-lg border border-[var(--color-navy-200)] shadow-sm mb-6 w-fit">
+            {availableItems.map((item) => {
+                const isActive = pathname === item.href;
+
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`
+                            px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200
+                            ${isActive
+                                ? 'bg-[var(--color-navy-800)] text-white shadow-sm'
+                                : 'text-[var(--color-navy-600)] hover:bg-[var(--color-navy-50)] hover:text-[var(--color-navy-900)]'
+                            }
+                        `}
+                    >
+                        <div className="flex items-center space-x-2">
+                            <span>{item.name}</span>
+                            {item.label === 'new' && !isActive && (
+                                <span className="bg-[var(--color-gold-500)] text-[var(--color-navy-900)] text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                    New
+                                </span>
+                            )}
+                        </div>
+                    </Link>
+                );
+            })}
+        </nav>
     );
 }

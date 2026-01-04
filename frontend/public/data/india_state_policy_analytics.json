@@ -23,15 +23,6 @@
   },
   "state_code_mapping": {
     "numeric_to_alpha": {
-      "01": "JK",
-      "02": "HP",
-      "03": "PB",
-      "04": "CH",
-      "05": "UT",
-      "06": "HR",
-      "07": "DL",
-      "08": "RJ",
-      "09": "UP",
       "10": "BR",
       "11": "SK",
       "12": "AR",
@@ -57,7 +48,16 @@
       "32": "KL",
       "33": "TN",
       "34": "PY",
-      "35": "AN"
+      "35": "AN",
+      "01": "JK",
+      "02": "HP",
+      "03": "PB",
+      "04": "CH",
+      "05": "UT",
+      "06": "HR",
+      "07": "DL",
+      "08": "RJ",
+      "09": "UP"
     },
     "alpha_to_numeric": {
       "JK": "01",
@@ -99,96 +99,6 @@
     "description": "Mapping between CSV numeric codes and database alphabetic codes"
   },
   "states": {
-    "01": {
-      "state_name": "JAMMU  KASHMIR",
-      "csv_code": "01",
-      "database_code": "JK",
-      "urban_category": "Insufficient Data",
-      "density_category": "Low Density",
-      "sex_ratio_interpretation": "Significantly below average",
-      "policy_interpretation": "Data collection priority: Governance capacity building and data infrastructure needs.",
-      "urban_data_available": false
-    },
-    "02": {
-      "state_name": "HIMACHAL PRADESH",
-      "csv_code": "02",
-      "database_code": "HP",
-      "urban_category": "Predominantly Rural",
-      "density_category": "Low Density",
-      "sex_ratio_interpretation": "Near national average",
-      "policy_interpretation": "Rural priority: Connectivity, infrastructure access, and service delivery focus.",
-      "urban_data_available": true
-    },
-    "03": {
-      "state_name": "PUNJAB",
-      "csv_code": "03",
-      "database_code": "PB",
-      "urban_category": "Semi-Rural",
-      "density_category": "High Density",
-      "sex_ratio_interpretation": "Significantly below average",
-      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
-      "urban_data_available": true
-    },
-    "04": {
-      "state_name": "CHANDIGARH",
-      "csv_code": "04",
-      "database_code": "CH",
-      "urban_category": "Highly Urbanized",
-      "density_category": "Very High Density",
-      "sex_ratio_interpretation": "Significantly below average",
-      "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
-      "urban_data_available": true
-    },
-    "05": {
-      "state_name": "UTTARAKHAND",
-      "csv_code": "05",
-      "database_code": "UT",
-      "urban_category": "Semi-Rural",
-      "density_category": "Low Density",
-      "sex_ratio_interpretation": "Near national average",
-      "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
-    },
-    "06": {
-      "state_name": "HARYANA",
-      "csv_code": "06",
-      "database_code": "HR",
-      "urban_category": "Semi-Rural",
-      "density_category": "High Density",
-      "sex_ratio_interpretation": "Significantly below average",
-      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
-      "urban_data_available": true
-    },
-    "07": {
-      "state_name": "NCT OF DELHI",
-      "csv_code": "07",
-      "database_code": "DL",
-      "urban_category": "Highly Urbanized",
-      "density_category": "Very High Density",
-      "sex_ratio_interpretation": "Significantly below average",
-      "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
-      "urban_data_available": true
-    },
-    "08": {
-      "state_name": "RAJASTHAN",
-      "csv_code": "08",
-      "database_code": "RJ",
-      "urban_category": "Semi-Rural",
-      "density_category": "Medium Density",
-      "sex_ratio_interpretation": "Below national average",
-      "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
-      "urban_data_available": true
-    },
-    "09": {
-      "state_name": "UTTAR PRADESH",
-      "csv_code": "09",
-      "database_code": "UP",
-      "urban_category": "Semi-Rural",
-      "density_category": "High Density",
-      "sex_ratio_interpretation": "Below national average",
-      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
-      "urban_data_available": true
-    },
     "10": {
       "state_name": "BIHAR",
       "csv_code": "10",
@@ -197,7 +107,8 @@
       "density_category": "Very High Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Mixed development approach with infrastructure and service priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "11": {
       "state_name": "SIKKIM",
@@ -207,7 +118,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Significantly below average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "12": {
       "state_name": "ARUNACHAL PRADESH",
@@ -217,7 +129,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "13": {
       "state_name": "NAGALAND",
@@ -227,7 +140,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "14": {
       "state_name": "MANIPUR",
@@ -237,7 +151,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "15": {
       "state_name": "MIZORAM",
@@ -247,7 +162,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Mixed development approach with infrastructure and service priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "16": {
       "state_name": "TRIPURA",
@@ -257,7 +173,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "17": {
       "state_name": "MEGHALAYA",
@@ -267,7 +184,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "18": {
       "state_name": "ASSAM",
@@ -277,7 +195,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural development: Infrastructure and connectivity improvement needs.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "19": {
       "state_name": "WEST BENGAL",
@@ -287,7 +206,8 @@
       "density_category": "Very High Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Mixed development approach with infrastructure and service priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "20": {
       "state_name": "JHARKHAND",
@@ -297,7 +217,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "21": {
       "state_name": "ODISHA",
@@ -307,7 +228,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural development: Infrastructure and connectivity improvement needs.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "22": {
       "state_name": "CHHATTISGARH",
@@ -317,7 +239,8 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "23": {
       "state_name": "MADHYA PRADESH",
@@ -327,7 +250,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "24": {
       "state_name": "GUJARAT",
@@ -337,7 +261,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Transitional region: Mixed development approach with urban growth management.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "25": {
       "state_name": "DAMAN  DIU",
@@ -347,7 +272,8 @@
       "density_category": "Very High Density",
       "sex_ratio_interpretation": "Significantly below average",
       "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "26": {
       "state_name": "DADRA  NAGAR HAVELI",
@@ -357,7 +283,8 @@
       "density_category": "High Density",
       "sex_ratio_interpretation": "Significantly below average",
       "policy_interpretation": "Emerging urban: Balanced urban-rural development with infrastructure scaling needs.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "27": {
       "state_name": "MAHARASHTRA",
@@ -367,7 +294,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Transitional region: Mixed development approach with urban growth management.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "28": {
       "state_name": "ANDHRA PRADESH",
@@ -377,7 +305,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "29": {
       "state_name": "KARNATAKA",
@@ -387,7 +316,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Transitional region: Mixed development approach with urban growth management.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "30": {
       "state_name": "GOA",
@@ -397,7 +327,8 @@
       "density_category": "Medium Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Mixed development approach with infrastructure and service priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "31": {
       "state_name": "LAKSHADWEEP",
@@ -407,7 +338,8 @@
       "density_category": "Very High Density",
       "sex_ratio_interpretation": "Below national average",
       "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "32": {
       "state_name": "KERALA",
@@ -417,7 +349,8 @@
       "density_category": "High Density",
       "sex_ratio_interpretation": "Above national average",
       "policy_interpretation": "Emerging urban: Balanced urban-rural development with infrastructure scaling needs.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "33": {
       "state_name": "TAMIL NADU",
@@ -427,7 +360,8 @@
       "density_category": "High Density",
       "sex_ratio_interpretation": "Near national average",
       "policy_interpretation": "Emerging urban: Balanced urban-rural development with infrastructure scaling needs.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "34": {
       "state_name": "PUDUCHERRY",
@@ -437,7 +371,8 @@
       "density_category": "Very High Density",
       "sex_ratio_interpretation": "Above national average",
       "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     },
     "35": {
       "state_name": "ANDAMAN  NICOBAR ISLANDS",
@@ -447,7 +382,107 @@
       "density_category": "Low Density",
       "sex_ratio_interpretation": "Significantly below average",
       "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
-      "urban_data_available": true
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "01": {
+      "state_name": "JAMMU  KASHMIR",
+      "csv_code": "01",
+      "database_code": "JK",
+      "urban_category": "Insufficient Data",
+      "density_category": "Low Density",
+      "sex_ratio_interpretation": "Significantly below average",
+      "policy_interpretation": "Data collection priority: Governance capacity building and data infrastructure needs.",
+      "urban_data_available": false,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "02": {
+      "state_name": "HIMACHAL PRADESH",
+      "csv_code": "02",
+      "database_code": "HP",
+      "urban_category": "Predominantly Rural",
+      "density_category": "Low Density",
+      "sex_ratio_interpretation": "Near national average",
+      "policy_interpretation": "Rural priority: Connectivity, infrastructure access, and service delivery focus.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "03": {
+      "state_name": "PUNJAB",
+      "csv_code": "03",
+      "database_code": "PB",
+      "urban_category": "Semi-Rural",
+      "density_category": "High Density",
+      "sex_ratio_interpretation": "Significantly below average",
+      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "04": {
+      "state_name": "CHANDIGARH",
+      "csv_code": "04",
+      "database_code": "CH",
+      "urban_category": "Highly Urbanized",
+      "density_category": "Very High Density",
+      "sex_ratio_interpretation": "Significantly below average",
+      "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "05": {
+      "state_name": "UTTARAKHAND",
+      "csv_code": "05",
+      "database_code": "UT",
+      "urban_category": "Semi-Rural",
+      "density_category": "Low Density",
+      "sex_ratio_interpretation": "Near national average",
+      "policy_interpretation": "Rural connectivity: Infrastructure access and service delivery challenges.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "06": {
+      "state_name": "HARYANA",
+      "csv_code": "06",
+      "database_code": "HR",
+      "urban_category": "Semi-Rural",
+      "density_category": "High Density",
+      "sex_ratio_interpretation": "Significantly below average",
+      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "07": {
+      "state_name": "NCT OF DELHI",
+      "csv_code": "07",
+      "database_code": "DL",
+      "urban_category": "Highly Urbanized",
+      "density_category": "Very High Density",
+      "sex_ratio_interpretation": "Significantly below average",
+      "policy_interpretation": "Metropolitan focus: Infrastructure capacity, urban services, and sustainable development priorities.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "08": {
+      "state_name": "RAJASTHAN",
+      "csv_code": "08",
+      "database_code": "RJ",
+      "urban_category": "Semi-Rural",
+      "density_category": "Medium Density",
+      "sex_ratio_interpretation": "Below national average",
+      "policy_interpretation": "Rural development: Infrastructure connectivity and service delivery focus.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
+    },
+    "09": {
+      "state_name": "UTTAR PRADESH",
+      "csv_code": "09",
+      "database_code": "UP",
+      "urban_category": "Semi-Rural",
+      "density_category": "High Density",
+      "sex_ratio_interpretation": "Below national average",
+      "policy_interpretation": "Dense rural: Rural infrastructure with connectivity and service access priorities.",
+      "urban_data_available": true,
+      "caste_category": "INSUFFICIENT_DATA"
     }
   },
   "national_patterns": {

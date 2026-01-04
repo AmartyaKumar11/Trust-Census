@@ -10,17 +10,19 @@ import { Disclaimer } from '@/components/ui';
 // New Policy Analytics Components
 import { NationalPolicyOverview } from '@/components/analytics/national/NationalPolicyOverview';
 import { IndiaPoliticalMap } from '@/components/analytics/national/IndiaPoliticalMap';
+import { IndiaCasteCompositionMap } from '@/components/analytics/national/IndiaCasteCompositionMap'; // Restored
 import { StatePolicySnapshot } from '@/components/analytics/national/StatePolicySnapshot';
 import { NationalPatternsSummary } from '@/components/analytics/national/NationalPatternsSummary';
 import { DataCoverageNotice } from '@/components/analytics/national/DataCoverageNotice';
+import { PolicyCategory } from '@/lib/stateCategories';
 
 // Policy Data Loader
-import { 
-  loadPolicyAnalytics, 
-  type PolicyAnalytics, 
-  type StatePolicy,
-  getNationalPolicySummary,
-  getDataCoverageSummary
+import {
+    loadPolicyAnalytics,
+    type PolicyAnalytics,
+    type StatePolicy,
+    getNationalPolicySummary,
+    getDataCoverageSummary
 } from '@/lib/policyData';
 
 export default function NationalAnalyticsPage() {
@@ -51,6 +53,67 @@ function NationalAnalyticsContent() {
     const [selectedStateCode, setSelectedStateCode] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'caste' | 'urbanisation'>('caste'); // Default to Caste Map
+
+
+
+    // State for live categories
+    const [liveCategories, setLiveCategories] = useState<Record<string, PolicyCategory>>({});
+
+    // Fetch live data from backend
+    useEffect(() => {
+        async function fetchLiveData() {
+            try {
+                // Import dynamically to avoid SSR issues if needed, or just standard import
+                const { getAllStateAggregates } = await import('@/lib/apiClient');
+                const { classifyState } = await import('@/lib/stateCategories');
+
+                const liveData = await getAllStateAggregates();
+
+                const newCategories: Record<string, PolicyCategory> = {};
+
+                liveData.forEach(stateData => {
+                    // Convert API aggregates to format expected by classifyState
+                    const composition = stateData.aggregates.map(agg => ({
+                        category: agg.category,
+                        populationEstimate: agg.populationEstimate
+                    }));
+
+                    const category = classifyState(composition);
+                    newCategories[stateData.stateName] = category;
+                });
+
+                setLiveCategories(newCategories);
+            } catch (err) {
+                console.error('Failed to fetch live policy data:', err);
+                // Fallback to static data is handled by derivedStateCategories logic below
+            }
+        }
+
+        fetchLiveData();
+    }, []);
+
+    // Merge: Live data takes precedence over static policyData
+    const derivedStateCategories = (() => {
+        const map: Record<string, PolicyCategory> = {};
+
+        // 1. Start with static data
+        if (policyData) {
+            Object.values(policyData.states).forEach(state => {
+                if (state.caste_category) {
+                    map[state.state_name] = state.caste_category as PolicyCategory;
+                }
+            });
+        }
+
+        // 2. Override with live data (if available)
+        // This ensures the map reflects the "colour coding logic" from the DB
+        Object.entries(liveCategories).forEach(([name, category]) => {
+            map[name] = category;
+        });
+
+        return map;
+    })();
 
     // Load policy analytics on mount
     useEffect(() => {
@@ -77,9 +140,9 @@ function NationalAnalyticsContent() {
     };
 
     // Get selected state data
-    const selectedState: StatePolicy | null = 
-        policyData && selectedStateCode 
-            ? policyData.states[selectedStateCode] || null 
+    const selectedState: StatePolicy | null =
+        policyData && selectedStateCode
+            ? policyData.states[selectedStateCode] || null
             : null;
 
     // Loading state
@@ -133,25 +196,13 @@ function NationalAnalyticsContent() {
             <main className="container mx-auto px-4 md:px-6 space-y-8 -mt-6 relative z-10">
 
                 {/* Analytics Navigation - Direct Test */}
-                <div className="bg-red-100 border border-red-300 rounded-lg p-4 mb-6">
-                    <div className="text-red-800 font-bold">
-                        DEBUG: Direct navigation test
-                    </div>
-                    <div className="mt-2">
-                        <a 
-                            href="/analytics/policy-simulation" 
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        >
-                            Go to Policy Simulation
-                        </a>
-                    </div>
-                </div>
+
 
                 {/* Analytics Navigation */}
                 <AnalyticsNavigation />
 
                 {/* Section 1: National Policy Overview */}
-                <NationalPolicyOverview 
+                <NationalPolicyOverview
                     summary={nationalSummary}
                     coverage={coverageSummary}
                     metadata={policyData.metadata}
@@ -159,24 +210,63 @@ function NationalAnalyticsContent() {
 
                 {/* Section 2: Interactive Map and State Snapshot */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                    
+
                     {/* Political Map (Columns 1-7) */}
                     <div className="lg:col-span-7 h-full min-h-[600px]">
                         <div className="bg-white rounded-xl border border-[var(--color-navy-100)] p-6 h-full shadow-sm">
-                            <div className="mb-4">
-                                <h3 className="font-serif font-bold text-lg text-[var(--color-navy-900)]">
-                                    India - Urbanisation Categories
-                                </h3>
-                                <p className="text-sm text-[var(--color-charcoal-600)] mt-1">
-                                    Click on any state to view policy insights
-                                </p>
+                            <div className="mb-4 flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-serif font-bold text-lg text-[var(--color-navy-900)]">
+                                        {viewMode === 'caste' ? 'India - Composition Patterns' : 'India - Urbanisation Categories'}
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-charcoal-600)] mt-1">
+                                        Click on any state to view policy insights
+                                    </p>
+                                </div>
+
+                                {/* View Toggle */}
+                                <div className="flex bg-[var(--color-navy-50)] p-1 rounded-lg border border-[var(--color-navy-100)]">
+                                    <button
+                                        onClick={() => setViewMode('caste')}
+                                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'caste'
+                                            ? 'bg-white text-[var(--color-navy-800)] shadow-sm'
+                                            : 'text-[var(--color-charcoal-600)] hover:text-[var(--color-navy-800)]'
+                                            }`}
+                                    >
+                                        Composition
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('urbanisation')}
+                                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'urbanisation'
+                                            ? 'bg-white text-[var(--color-navy-800)] shadow-sm'
+                                            : 'text-[var(--color-charcoal-600)] hover:text-[var(--color-navy-800)]'
+                                            }`}
+                                    >
+                                        Urbanisation
+                                    </button>
+                                </div>
                             </div>
-                            
-                            <IndiaPoliticalMap
-                                policyData={policyData}
-                                selectedStateCode={selectedStateCode}
-                                onStateSelect={handleStateSelect}
-                            />
+
+                            {viewMode === 'caste' ? (
+                                <IndiaCasteCompositionMap
+                                    stateCategories={derivedStateCategories}
+                                    selectedState={selectedState?.state_name || null}
+                                    onStateClick={(stateName: string) => {
+                                        // Reverse lookup state code from name to maintain compatibility
+                                        const entries = Object.entries(policyData.states);
+                                        const found = entries.find(([_, s]) =>
+                                            s.state_name.toLowerCase() === stateName.toLowerCase()
+                                        );
+                                        if (found) handleStateSelect(found[0]);
+                                    }}
+                                />
+                            ) : (
+                                <IndiaPoliticalMap
+                                    policyData={policyData}
+                                    selectedStateCode={selectedStateCode}
+                                    onStateSelect={handleStateSelect}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -190,13 +280,13 @@ function NationalAnalyticsContent() {
                 </div>
 
                 {/* Section 3: National Patterns Summary */}
-                <NationalPatternsSummary 
+                <NationalPatternsSummary
                     patterns={policyData.national_patterns}
                     statesData={policyData.states}
                 />
 
                 {/* Section 4: Data Coverage Notice */}
-                <DataCoverageNotice 
+                <DataCoverageNotice
                     dataGaps={policyData.national_patterns.data_gaps_states}
                     coverage={coverageSummary}
                 />

@@ -142,7 +142,7 @@ export interface SubmissionVerifyResponse {
 
 // Analytics types
 export interface AnalyticsStateParams {
-  stateCode: string;
+  stateCode?: string;
   windowId?: string;
 }
 
@@ -598,11 +598,68 @@ export async function getStateAggregates(stateCode: string, windowId?: string): 
   return {
     stateCode: stateCodeFromData,
     stateName: stateNames[stateCodeFromData] || stateCodeFromData,
-    windowId: firstRecord.aggregation_window_id || windowId || 'current',
+    windowId: firstRecord.aggregation_window_id,
     aggregates,
-    generatedAt: firstRecord.computed_at || new Date().toISOString(),
-    privacyNotice: response.disclaimer?.notice || 'Values are privacy-preserving estimates with differential privacy noise applied.',
+    generatedAt: firstRecord.computed_at,
+    privacyNotice: response.disclaimer?.notice || 'Privacy values',
   };
+}
+
+/**
+ * Get aggregates for ALL states.
+ */
+export async function getAllStateAggregates(windowId?: string): Promise<AnalyticsStateResponse[]> {
+  // Call API without stateCode to get all states
+  const response: any = await apiRequest('analytics.stateAggregates', { windowId });
+
+  if (!response.data || response.data.length === 0) {
+    return [];
+  }
+
+  // Group by state code
+  const groupedData: Record<string, any[]> = {};
+  response.data.forEach((item: any) => {
+    const code = item.geographic_code;
+    if (!groupedData[code]) {
+      groupedData[code] = [];
+    }
+    groupedData[code].push(item);
+  });
+
+  const stateNames: Record<string, string> = {
+    'MH': 'Maharashtra', 'KA': 'Karnataka', 'TN': 'Tamil Nadu',
+    'DL': 'Delhi', 'UP': 'Uttar Pradesh', 'WB': 'West Bengal',
+    'GJ': 'Gujarat', 'RJ': 'Rajasthan', 'AP': 'Andhra Pradesh',
+    'TG': 'Telangana', 'JK': 'Jammu & Kashmir', 'HP': 'Himachal Pradesh',
+    'PB': 'Punjab', 'CH': 'Chandigarh', 'UT': 'Uttarakhand',
+    'HR': 'Haryana', 'BR': 'Bihar', 'SK': 'Sikkim',
+    'AR': 'Arunachal Pradesh', 'NL': 'Nagaland', 'MN': 'Manipur',
+    'MZ': 'Mizoram', 'TR': 'Tripura', 'ML': 'Meghalaya',
+    'AS': 'Assam', 'JH': 'Jharkhand', 'OD': 'Odisha',
+    'CG': 'Chhattisgarh', 'MP': 'Madhya Pradesh', 'DD': 'Daman & Diu',
+    'DN': 'Dadra & Nagar Haveli', 'GA': 'Goa', 'LD': 'Lakshadweep',
+    'KL': 'Kerala', 'PY': 'Puducherry', 'AN': 'Andaman & Nicobar'
+  };
+
+  // Convert each group to a response object
+  return Object.entries(groupedData).map(([code, items]) => {
+    const firstRecord = items[0];
+    const aggregates: AggregateData[] = items.map((item: any) => ({
+      category: item.caste_category,
+      populationEstimate: item.noisy_population || 0,
+      submissionCount: item.noisy_submission_count || 0,
+      privacyDisclaimer: response.disclaimer?.notice,
+    }));
+
+    return {
+      stateCode: code,
+      stateName: stateNames[code] || code,
+      windowId: firstRecord.aggregation_window_id,
+      aggregates,
+      generatedAt: firstRecord.computed_at,
+      privacyNotice: response.disclaimer?.notice,
+    };
+  });
 }
 
 /**
