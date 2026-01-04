@@ -94,6 +94,34 @@ Submission → One-way Storage → Aggregate Computation
    npm run dev
    ```
 
+### Desktop Mode (Optional)
+
+The system can also run as a desktop application using Electron.
+
+**Prerequisites:**
+- PostgreSQL must be running (see step 4 above)
+- Backend and frontend dependencies installed
+
+**Install Electron dependencies:**
+```bash
+npm run electron:install
+```
+
+**Start desktop app:**
+```bash
+npm run electron:dev
+```
+
+The desktop app will:
+1. Check if PostgreSQL is available (port 5433)
+2. Start the backend server automatically
+3. Start the frontend server automatically
+4. Open in a native desktop window
+
+See [`electron/README.md`](file:///d:/Trust-Census/electron/README.md) for more details.
+
+**Note:** The desktop app is just a launcher. All trust logic remains in the backend API and frontend guards.
+
 ### Docker Setup
 
 ```bash

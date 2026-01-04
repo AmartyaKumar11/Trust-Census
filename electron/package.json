@@ -1,0 +1,20 @@
+{
+    "name": "trust-census-electron",
+    "version": "1.0.0",
+    "description": "Electron desktop wrapper for Trust-First Census System",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --trace-warnings"
+    },
+    "keywords": [
+        "electron",
+        "desktop",
+        "census"
+    ],
+    "author": "Trust-Census Team",
+    "license": "UNLICENSED",
+    "devDependencies": {
+        "electron": "^28.0.0"
+    }
+}
